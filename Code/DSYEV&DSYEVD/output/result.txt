@@ -1,0 +1,23 @@
+Benchmark: DSYEV (QR) vs DSYEVD (Divide & Conquer)
+Compute eigenvalues + eigenvectors
+
+=== N = 500 ===
+DSYEV  (QR):  0.095 s
+DSYEVD (DC):  0.014 s
+
+=== N = 1000 ===
+DSYEV  (QR):  0.531 s
+DSYEVD (DC):  0.067 s
+
+=== N = 2000 ===
+DSYEV  (QR):  4.256 s
+DSYEVD (DC):  0.397 s
+
+=== N = 4000 ===
+DSYEV  (QR):  39.251 s
+DSYEVD (DC):  3.473 s
+
+=== N = 8000 ===
+DSYEV  (QR):  313.812 s
+DSYEVD (DC):  29.409 s
+
