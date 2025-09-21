@@ -15,3 +15,11 @@ disassembly, performance tests).
 ```bash
 brew install cmake gcc ninja
 # gfortran comes with Homebrew's gcc
+
+
+
+
+make check          # optional: verify toolchain
+make                # fetch + configure + build (Release, static)
+# optional:
+make install        # installs into ./install
