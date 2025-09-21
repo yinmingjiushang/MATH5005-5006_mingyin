@@ -6,3 +6,5 @@ print("SciPy version:", scipy.__version__)
 
 # 显示 NumPy BLAS/LAPACK 配置
 c.show()
+
+
