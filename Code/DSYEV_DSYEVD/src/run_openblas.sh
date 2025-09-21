@@ -16,12 +16,12 @@ mkdir -p ../output
 echo "==> Compiling: $SRC"
 "$CC" -O3 -D_POSIX_C_SOURCE=200112L -c "$SRC" -o "${OUT}.o"
 
-echo "==> Linking with OpenBLAS:"
+echo "==> Linking with OpenBLAS (static):"
 echo "    $FC ${OUT}.o $OPENBLAS_LIB -lm -o $OUT"
 $FC "${OUT}.o" "$OPENBLAS_LIB" -lm -o "$OUT"
 
 # ---- Run ----
-THREADS="${OPENBLAS_NUM_THREADS:-$(sysctl -n hw.physicalcpu 2>/dev/null || echo 1)}"
+THREADS="${OPENBLAS_NUM_THREADS:-1}"   # <--- default single-thread
 echo "==> Running with OPENBLAS_NUM_THREADS=$THREADS"
 OPENBLAS_NUM_THREADS="$THREADS" ./"$OUT"
 
