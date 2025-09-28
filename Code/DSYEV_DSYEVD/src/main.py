@@ -6,12 +6,20 @@ Compute eigenvalues + eigenvectors, write results to output/result.txt.
 """
 
 import os
+
+os.environ["OPENBLAS_NUM_THREADS"] = "1"   # OpenBLAS(pthreads)
+os.environ["OMP_NUM_THREADS"]      = "1"   # OpenBLAS(OpenMP) / MKL(OpenMP)
+os.environ["MKL_NUM_THREADS"]      = "1"
+os.environ["NUMEXPR_NUM_THREADS"]  = "1"
+
+
 import numpy as np
 import time
 from scipy.linalg import lapack
 
 # ------------------ Config ---------------------
-sizes = [500, 1000, 2000, 4000, 8000]
+# sizes = [500, 1000, 2000, 4000, 8000]
+sizes = [4000]
 output_dir = "../output"
 output_file = os.path.join(output_dir, "result.txt")
 

@@ -1,0 +1,10 @@
+Benchmark: DSYEV (QR) vs DSYEVD (Divide & Conquer)
+Comparing N (eigenvalues only) vs V (eigenvalues + eigenvectors)
+Repetitions per point: 5 (median)
+
+ Matrix Size (N)  DSYEV (N) [s]  DSYEV (V) [s]  DSYEVD (N) [s]  DSYEVD (V) [s]  Speedup N (QR/DC)  Speedup V (QR/DC)
+             500          0.013          0.075           0.012           0.015              1.092              5.160
+            1000          0.067          0.590           0.066           0.064              1.016              9.218
+            2000          0.433          4.350           0.431           0.407              1.004             10.699
+            4000          6.540         40.797           6.221           3.544              1.051             11.513
+            8000         60.403        337.374          60.157          29.409              1.004             11.472
