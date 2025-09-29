@@ -2,10 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <errno.h>
 #include <math.h>
+
+/* ---- portable mkdir ---- */
+#ifdef _WIN32
+  #include <direct.h>                 /* _mkdir */
+  #define MKDIR(path) _mkdir(path)
+#else
+  #include <sys/stat.h>
+  #include <sys/types.h>
+  #define MKDIR(path) mkdir(path, 0777)
+#endif
 
 /* Fortran LAPACK prototypes */
 extern void dsyev_(const char *JOBZ, const char *UPLO, const int *N,
@@ -34,7 +42,7 @@ static double now_seconds(void) {
 
 /* -------- fs helpers -------- */
 static void ensure_output_dir(void) {
-    int rc = mkdir("../output", 0777);
+    int rc = MKDIR("../output");
     if (rc != 0 && errno != EEXIST) {
         perror("mkdir ../output");
         exit(1);
@@ -87,7 +95,7 @@ static void write_digest(const char *path, double sumv, double l2v) {
 
 int main(void) {
     /* -------- config -------- */
-    const int  N    = 4000;     /* set matrix size here */
+    const int  N    = 8000;     /* set matrix size here */
     const int  LDA  = N;
     const char JOBZ = 'V';
     const char UPLO = 'L';
