@@ -8,7 +8,7 @@ OPENBLAS_LIB="${OPENBLAS_LIB:-../../openblas/install/lib/libopenblas.a}"
 OUT="${OUT:-my_objdump.s}"
 
 # 指定要看的函数，多个用逗号分隔；留空则导出整个 .text 段
-FUNCS="${FUNCS:-dsyevd_,dstedc_}"
+FUNCS="${FUNCS:-dsyevd_,dstedc_,dgemm_}"
 
 # 平台：MSYS2 自动加 .exe 后缀
 EXE_SUFFIX=""
