@@ -15,7 +15,7 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 
 # Problem sizes
-sizes = [4000, 8000]
+sizes = [4000]
 
 for n in sizes:
     # --- Generate a random symmetric tridiagonal matrix ---------------------
