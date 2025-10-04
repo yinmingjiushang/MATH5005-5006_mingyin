@@ -16,3 +16,11 @@ Evaluate LAPACK routines (e.g. `dsyevd`) on Arm-based CPUs with SVE support.
 sudo dnf update -y
 sudo dnf groupinstall -y "Development Tools"
 sudo dnf install -y gcc gcc-gfortran cmake git make wget tar
+
+
+
+sudo dnf config-manager --enable amazonlinux-debuginfo || true
+
+sudo dnf install -y \
+  glibc-debuginfo libgcc-debuginfo libstdc++-devel libstdc++-debuginfo \
+  libgfortran-debuginfo

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # install_openblas_arm.sh
-# Build & install OpenBLAS on AWS Arm (Graviton). Prints SVE/CPU feature info.
+# Build & install OpenBLAS on AWS Arm (Graviton). Optimized for perf profiling.
 # Usage:
 #   bash install_openblas_arm.sh
 # Optional env:
-#   PREFIX=/opt/openblas USE_OPENMP=0 STATIC_ONLY=0 DYNAMIC_ARCH=0 TARGET=auto
+#   PREFIX=/opt/openblas USE_OPENMP=0 STATIC_ONLY=0 DYNAMIC_ARCH=0 TARGET=auto WITH_DEBUG=1
 
 set -euo pipefail
 
@@ -18,6 +18,7 @@ INSTALL_INC_DIR="$PREFIX/include"
 : "${STATIC_ONLY:=0}"                              # 1=build static only
 : "${DYNAMIC_ARCH:=0}"                             # 1=multiple-arch fat binary
 : "${TARGET:=auto}"                                # auto=detect NEOVERSEN1/NEOVERSEV1/NEOVERSEN2
+: "${WITH_DEBUG:=1}"                               # 1=keep symbols for perf/dwarf
 
 if command -v nproc >/dev/null 2>&1; then JOBS="$(nproc)"; else JOBS=4; fi
 
@@ -26,12 +27,13 @@ echo "==> USE_OPENMP     : $USE_OPENMP"
 echo "==> STATIC_ONLY    : $STATIC_ONLY"
 echo "==> DYNAMIC_ARCH   : $DYNAMIC_ARCH"
 echo "==> TARGET(opt)    : $TARGET"
+echo "==> WITH_DEBUG     : $WITH_DEBUG  (adds -g -fno-omit-frame-pointer; disable strip)"
 echo "==> JOBS           : $JOBS"
 echo
 
 mkdir -p "$INSTALL_LIB_DIR" "$INSTALL_INC_DIR"
 
-# ========= Detect package manager & install deps =========
+# ========= Deps =========
 install_deps() {
   if command -v apt-get >/dev/null 2>&1; then
     echo "==> Detected Debian/Ubuntu (apt). Installing deps..."
@@ -46,84 +48,63 @@ install_deps() {
     exit 1
   fi
 }
-
 install_deps
 
-# ========= Print CPU info & detect features =========
+# ========= CPU info & target detect =========
 print_cpu_info() {
-  echo "==> CPU Info (lscpu):"
-  lscpu || true
-  echo
-  echo "==> /proc/cpuinfo (first 20 lines):"
-  head -n 20 /proc/cpuinfo || true
-  echo
+  echo "==> CPU Info (lscpu):"; lscpu || true; echo
+  echo "==> /proc/cpuinfo (first 20 lines):"; head -n 20 /proc/cpuinfo || true; echo
 }
-
 print_cpu_info
 
 detect_target() {
-  local model features
+  local model features has_sve="no"
   model="$(lscpu | awk -F: '/Model name/ {print $2}' | sed 's/^ *//')"
   features="$(lscpu | awk -F: '/Flags|Features/ {print $2}' | tr '[:upper:]' '[:lower:]')"
-
-  # Feature flags (boolean)
-  local has_sve="no" has_neon="no" has_bf16="no" has_i8mm="no"
   [[ "$features" =~ (^|[[:space:]])sve([[:space:]]|$) ]] && has_sve="yes"
-  [[ "$features" =~ (^|[[:space:]])asimd([[:space:]]|$) ]] && has_neon="yes"
-  [[ "$features" =~ (^|[[:space:]])svebf16([[:space:]]|$) ]] && has_bf16="yes"
-  [[ "$features" =~ (^|[[:space:]])i8mm([[:space:]]|$) ]] && has_i8mm="yes"
 
-  echo "==> Detected model     : ${model:-unknown}"
-  echo "==> Detected features  : SVE=$has_sve  NEON(asimd)=$has_neon  SVE-BF16=$has_bf16  I8MM=$has_i8mm"
-  echo
+  >&2 echo "==> Detected model : ${model:-unknown}"
+  >&2 echo "==> Feature flags  : SVE=$has_sve"
 
-  # Choose OpenBLAS TARGET
   if [[ "$has_sve" == "yes" ]]; then
-    # Heuristic for Graviton generations:
-    if echo "$model" | grep -iq 'v2'; then
-      echo "NEOVERSEN2"   # Graviton4 (Neoverse V2)
-      return
-    fi
-    if echo "$model" | grep -iq 'v1'; then
-      echo "NEOVERSEV1"   # Graviton3 (Neoverse V1)
-      return
-    fi
-    # Fallback when SVE present but model unknown:
+    if echo "$model" | grep -qi 'v2'; then echo "NEOVERSEN2"; return; fi
+    if echo "$model" | grep -qi 'v1'; then echo "NEOVERSEV1"; return; fi
     echo "NEOVERSEV1"
   else
-    echo "NEOVERSEN1"     # Graviton2 (Neoverse N1, no SVE)
+    echo "NEOVERSEN1"
   fi
 }
-
-if [[ "$TARGET" == "auto" ]]; then
-  TARGET="$(detect_target)"
-fi
+if [[ "$TARGET" == "auto" ]]; then TARGET="$(detect_target)"; fi
 echo "==> Final TARGET   : $TARGET"
 echo
 
 # ========= Get OpenBLAS source =========
 if [[ ! -d "$SRC_DIR/.git" ]]; then
   echo "==> Cloning OpenBLAS source into: $SRC_DIR"
-  # Official repo:
+  # Official mirror moved under OpenMathLib org
   git clone --depth=1 https://github.com/OpenMathLib/OpenBLAS.git "$SRC_DIR"
 fi
 
 # ========= Build =========
-: "${CC:=gcc}"
-: "${FC:=gfortran}"
-: "${AR:=ar}"
-: "${RANLIB:=ranlib}"
+: "${CC:=gcc}"; : "${FC:=gfortran}"; : "${AR:=ar}"; : "${RANLIB:=ranlib}"
 export CC FC AR RANLIB
 
 cd "$SRC_DIR"
+echo "==> make clean"; make clean || true
 
-echo "==> make clean"
-make clean || true
-
+# Base make options
 MAKE_OPTS=( "NO_AFFINITY=1" "NO_TEST=1" "TARGET=$TARGET" )
 [[ "$DYNAMIC_ARCH" == "1" ]] && MAKE_OPTS+=( "DYNAMIC_ARCH=1" )
 [[ "$USE_OPENMP" == "1" ]] && MAKE_OPTS+=( "USE_OPENMP=1" ) || MAKE_OPTS+=( "USE_OPENMP=0" )
 [[ "$STATIC_ONLY" == "1" ]] && MAKE_OPTS+=( "NO_SHARED=1" )
+
+# Keep O3 but add debug info & frame pointers for better perf/dwarf unwind
+if [[ "$WITH_DEBUG" == "1" ]]; then
+  MAKE_OPTS+=( 'CFLAGS+=-g -fno-omit-frame-pointer' )
+  MAKE_OPTS+=( 'FCFLAGS+=-g -fno-omit-frame-pointer' )
+  # prevent install from stripping symbols
+  MAKE_OPTS+=( 'STRIP=true' )
+fi
 
 echo "==> Build options : ${MAKE_OPTS[*]}"
 make -j"$JOBS" "${MAKE_OPTS[@]}"
@@ -161,13 +142,15 @@ gcc /tmp/check_openblas.c -I"$INSTALL_INC_DIR" -L"$INSTALL_LIB_DIR" -lopenblas -
 LD_LIBRARY_PATH="$INSTALL_LIB_DIR:${LD_LIBRARY_PATH:-}" /tmp/check_openblas || true
 echo
 
-# Optional: scan for SVE register names in the shared library (if present)
+# Optional: quick SVE opcode probe in shared lib (if present)
 if [[ -f "$SHARED_SO" ]]; then
-  echo "==> Quick opcode scan for SVE mnemonics (z*/p* registers) in libopenblas.so (first match shown):"
+  echo "==> Quick SVE scan in libopenblas.so (first match):"
   if command -v objdump >/dev/null 2>&1; then
-    objdump -dC "$SHARED_SO" | grep -E -m1 '\bz[0-9]{1,2}\b|\bp[0-9]{1,2}\b' && echo "Found SVE-like ops." || echo "No SVE ops matched (not all kernels use SVE)."
+    objdump -dC "$SHARED_SO" | grep -E -m1 '\bz([0-9]|[12][0-9]|3[01])\b|\bp([0-9]|[12][0-9]|3[01])\b|ptrue|whilelt|movprfx' \
+      && echo "Found SVE-like ops." || echo "No obvious SVE ops found (not all kernels use SVE)."
   elif command -v llvm-objdump >/dev/null 2>&1; then
-    llvm-objdump -d "$SHARED_SO" | grep -E -m1 '\bz[0-9]{1,2}\b|\bp[0-9]{1,2}\b' && echo "Found SVE-like ops." || echo "No SVE ops matched (not all kernels use SVE)."
+    llvm-objdump -d "$SHARED_SO" | grep -E -m1 '\bz([0-9]|[12][0-9]|3[01])\b|\bp([0-9]|[12][0-9]|3[01])\b|ptrue|whilelt|movprfx' \
+      && echo "Found SVE-like ops." || echo "No obvious SVE ops found (not all kernels use SVE)."
   else
     echo "objdump not found; skipping opcode scan."
   fi
@@ -176,5 +159,9 @@ fi
 
 echo "==> Done."
 echo "Tips:"
+echo "  WITH_DEBUG=1            # keep symbols for perf (default)"
+echo "  STATIC_ONLY=1           # build static .a only"
+echo "  DYNAMIC_ARCH=1          # build fat binary (slower compile, bigger lib)"
+echo "  TARGET=NEOVERSEV1       # override auto detect if需要"
 echo "  export OPENBLAS_NUM_THREADS=8   # control threads"
-echo "  export OMP_NUM_THREADS=8        # if built with USE_OPENMP=1"
+echo "  export OMP_NUM_THREADS=8        # if USE_OPENMP=1"
