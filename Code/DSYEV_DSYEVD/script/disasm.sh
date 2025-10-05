@@ -123,10 +123,4 @@ echo "[Done] Disassembly outputs in: $ASM_DIR"
 echo "       - Binary asm : $BIN_ASM"
 echo "       - Objects    : *.asm for matched archive members (if any)"
 
-# -------------------- Usage tips --------------------
-# 1) 构建时手动指定静态库（当名字带后缀时）：
-#    OPENBLAS_A=../../openblas/openblas_install/lib/libopenblas_neoversev1p-r0.3.30.dev.a ./disasm.sh
-# 2) 更换输出目录：
-#    OUT_DIR=./my_out ./disasm.sh
-# 3) 线程控制：
-#    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 ARMPL_NUM_THREADS=1 ./disasm.sh
+

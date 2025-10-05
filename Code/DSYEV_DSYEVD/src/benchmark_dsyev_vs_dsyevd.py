@@ -21,7 +21,7 @@ from scipy.linalg import lapack
 # sizes = [500, 1000, 2000, 4000, 8000]
 sizes = [4000]
 output_dir = "../output"
-output_file = os.path.join(output_dir, "result.txt")
+output_file = os.path.join(output_dir, "benchmark_dsyev_vs_dsyevd.txt")
 
 # Ensure output directory exists
 os.makedirs(output_dir, exist_ok=True)
