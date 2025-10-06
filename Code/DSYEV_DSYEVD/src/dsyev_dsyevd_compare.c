@@ -95,7 +95,7 @@ static void write_digest(const char *path, double sumv, double l2v) {
 
 int main(void) {
     /* -------- config -------- */
-    const int  N    = 8000;     /* set matrix size here */
+    const int  N    = 4000;     /* set matrix size here */
     const int  LDA  = N;
     const char JOBZ = 'V';
     const char UPLO = 'L';

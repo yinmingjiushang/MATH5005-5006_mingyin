@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# flamegraph.sh — Generate CPU flame graph with perf + FlameGraph
-# Usage:
-#   ./flamegraph.sh run [duration_sec] [freq] -- <cmd> [args...]
-#   ./flamegraph.sh pid <PID> [duration_sec] [freq]
-#   ./flamegraph.sh system [duration_sec] [freq]
+# flamegraph.sh — perf + FlameGraph (full-run for 'case'; outputs under ../output/)
+# Modes:
+#   case <BIN> [freq] [-- <args...>]
+#       -> runs ../output/bin/<BIN> to completion (full-run sampling)
+#       -> outputs to ../output/perf/<BIN>_<timestamp>/
+#   pid  <PID> [duration] [freq]
+#       -> outputs to ../output/perf/pid<PID>_<timestamp>/
+#   system [duration] [freq]
+#       -> outputs to ../output/perf/system_<timestamp>/
 #
 # Examples:
-#   ./flamegraph.sh run 15 99 -- ../src/dsyevd
+#   ./flamegraph.sh case dsyevd-openblas
+#   ./flamegraph.sh case dsyevd-openblas 199 -- --matrix 8000
 #   ./flamegraph.sh pid 12345 20 199
-#   ./flamegraph.sh system 30 99
-#
-# Notes:
-# - Needs: perf, git, awk, sed. Will try to guide install.
-# - Uses DWARF call graph for better user-space stacks.
-# - Outputs to: ./output/perf/<timestamp>/{perf.data,perf.stacks,perf.folded,flame.svg}
+#   ./flamegraph.sh system 10 99
 
 set -euo pipefail
 
@@ -22,141 +22,123 @@ export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
-OUT_ROOT="$SCRIPT_DIR/output/perf"
+BIN_ROOT="$SCRIPT_DIR/../output/bin"
+OUT_ROOT="$SCRIPT_DIR/../output/perf"
 TOOLS_DIR="$SCRIPT_DIR/tools"
 FLAME_DIR="$TOOLS_DIR/FlameGraph"
+mkdir -p "$OUT_ROOT"
+
+MODE="${1:-}"; [[ -n "$MODE" ]] || { echo "Usage: case|pid|system ..."; exit 2; }; shift || true
 TS="$(date +%Y%m%d_%H%M%S)"
-OUT_DIR="$OUT_ROOT/$TS"
-mkdir -p "$OUT_DIR"
 
-MODE="${1:-run}"            # run | pid | system
-shift || true
-
-# Defaults
-DURATION="${1:-15}"; shift || true
-FREQ="${1:-99}";     shift || true
-
-# ——— helpers ———
 need() { command -v "$1" >/dev/null 2>&1; }
-die() { echo "[Error] $*"; exit 1; }
-
-detect_pkgmgr() {
-  if need dnf; then echo dnf
-  elif need yum; then echo yum
-  elif need apt; then echo apt
-  else echo unknown
-  fi
-}
-
-ensure_perf() {
-  if need perf; then return; fi
-  echo "[Warn] 'perf' not found."
-  local pm; pm="$(detect_pkgmgr)"
-  case "$pm" in
-    dnf) echo "  Try: sudo dnf install -y perf";;
-    yum) echo "  Try: sudo yum install -y perf";;
-    apt) echo "  Try: sudo apt update && sudo apt install -y linux-perf";;
-    *)   echo "  Unknown package manager. Install 'perf' manually.";;
-  esac
-  die "Please install 'perf' and rerun."
-}
+die()  { echo "[Error] $*"; exit 1; }
 
 ensure_tools() {
-  need git || die "git required."
-  need awk || die "awk required."
-  need sed || die "sed required."
+  need perf || die "'perf' not installed"
+  need awk  || die "'awk' not installed"
+  need sed  || die "'sed' not installed"
   if [[ ! -d "$FLAME_DIR" ]]; then
+    need git || die "'git' not installed (required for FlameGraph clone)"
     mkdir -p "$TOOLS_DIR"
-    echo "[Info] Cloning FlameGraph into $FLAME_DIR ..."
+    echo "[Info] Cloning FlameGraph ..."
     git clone --depth=1 https://github.com/brendangregg/FlameGraph.git "$FLAME_DIR"
   fi
 }
 
-lower_paranoia_if_possible() {
-  # Try to relax perf restrictions (ignore failures)
-  if [[ -w /proc/sys/kernel/perf_event_paranoid ]]; then
-    echo 1 | sudo tee /proc/sys/kernel/perf_event_paranoid >/dev/null 2>&1 || true
-  else
-    sudo sysctl -w kernel.perf_event_paranoid=1 >/dev/null 2>&1 || true
+# Parse optional [duration] [freq] then optional "--"
+parse_df() {
+  DURATION=15
+  FREQ=99
+  if [[ $# -ge 1 && "${1:-}" =~ ^[0-9]+$ ]]; then
+    DURATION="$1"; shift
   fi
-  if [[ -w /proc/sys/kernel/kptr_restrict ]]; then
-    echo 0 | sudo tee /proc/sys/kernel/kptr_restrict >/dev/null 2>&1 || true
-  else
-    sudo sysctl -w kernel.kptr_restrict=0 >/dev/null 2>&1 || true
+  if [[ $# -ge 1 && "${1:-}" =~ ^[0-9]+$ ]]; then
+    FREQ="$1"; shift
   fi
+  if [[ "${1:-}" == "--" ]]; then shift; fi
+  ARGS_REST=("$@")
 }
 
-record_run() {
-  # Remaining args after '--' is the command
-  local cmd=("$@")
-  if [[ ${#cmd[@]} -eq 0 ]]; then
-    # default to your dsyevd test
-    cmd=("$SCRIPT_DIR/../src/dsyevd")
+# Parse optional [freq] then optional "--" (for 'case' full-run)
+parse_f() {
+  FREQ=99
+  if [[ $# -ge 1 && "${1:-}" =~ ^[0-9]+$ ]]; then
+    FREQ="$1"; shift
   fi
-  echo "[Record] mode=run duration=${DURATION}s freq=${FREQ} cmd=${cmd[*]}"
-  perf record -F "$FREQ" -g --call-graph dwarf --output="$OUT_DIR/perf.data" -- \
-    "${cmd[@]}" || true
-}
-
-record_pid() {
-  local pid="$1"; shift || true
-  echo "[Record] mode=pid pid=$pid duration=${DURATION}s freq=${FREQ}"
-  # sample for DURATION seconds
-  perf record -F "$FREQ" -g --call-graph dwarf -p "$pid" \
-    --output="$OUT_DIR/perf.data" -- sleep "$DURATION" || true
-}
-
-record_system() {
-  echo "[Record] mode=system duration=${DURATION}s freq=${FREQ}"
-  perf record -F "$FREQ" -g --call-graph dwarf -a \
-    --output="$OUT_DIR/perf.data" -- sleep "$DURATION" || true
+  if [[ "${1:-}" == "--" ]]; then shift; fi
+  ARGS_REST=("$@")
 }
 
 post_process() {
-  echo "[Process] Converting perf.data -> stacks -> folded -> flame.svg"
-  # perf script to text stacks
-  perf script -i "$OUT_DIR/perf.data" > "$OUT_DIR/perf.stacks" 2>/dev/null || true
-  # collapse stacks
-  "$FLAME_DIR/stackcollapse-perf.pl" "$OUT_DIR/perf.stacks" > "$OUT_DIR/perf.folded"
-  # generate SVG
-  "$FLAME_DIR/flamegraph.pl" --title "CPU Flame Graph ($MODE, ${DURATION}s, F${FREQ})" \
+  local out_dir="$1"; shift
+  local title="$1";   shift
+  echo "[Process] Generating stacks / folded / flame.svg"
+  perf script -i "$out_dir/perf.data" > "$out_dir/perf.stacks" 2>/dev/null || true
+  "$FLAME_DIR/stackcollapse-perf.pl" "$out_dir/perf.stacks" > "$out_dir/perf.folded"
+  "$FLAME_DIR/flamegraph.pl" --title "CPU Flame Graph (${title}, F${FREQ})" \
     --countname=samples --width=1600 --height=900 \
-    "$OUT_DIR/perf.folded" > "$OUT_DIR/flame.svg"
-  echo "[Done] Flame graph: $OUT_DIR/flame.svg"
+    "$out_dir/perf.folded" > "$out_dir/flame.svg"
+  echo "[Done] $out_dir/flame.svg"
 }
 
-# ——— main ———
-ensure_perf
 ensure_tools
-lower_paranoia_if_possible
 
 case "$MODE" in
-  run)
-    # If user passed '--', everything after它就是命令
-    if [[ "${1:-}" == "--" ]]; then shift; fi
-    record_run "$@"
+  case)
+    # case <BIN> [freq] [-- <args...>] (full-run)
+    [[ $# -ge 1 ]] || die "Usage: ./flamegraph.sh case <BIN> [freq] [-- <args...>]"
+    BIN="$1"; shift || true
+    BIN_PATH="$BIN_ROOT/$BIN"
+    [[ -x "$BIN_PATH" ]] || die "Binary not found or not executable: $BIN_PATH"
+
+    parse_f "$@"; set -- "${ARGS_REST[@]}"
+    TITLE="$BIN"
+    OUT_DIR="$OUT_ROOT/${TITLE}_${TS}"
+    mkdir -p "$OUT_DIR"
+
+    echo "[Record] case=$BIN full-run F${FREQ} :: $BIN_PATH $*"
+    perf record -F "$FREQ" -g --call-graph dwarf --output="$OUT_DIR/perf.data" -- "$BIN_PATH" "$@" || true
+    post_process "$OUT_DIR" "$TITLE"
     ;;
+
   pid)
+    # pid <PID> [duration] [freq]
     [[ $# -ge 1 ]] || die "Usage: ./flamegraph.sh pid <PID> [duration] [freq]"
-    PID="$1"; shift || true
-    [[ -d "/proc/$PID" ]] || die "PID $PID not found"
-    record_pid "$PID"
+    PID_VAL="$1"; shift || true
+    [[ -d "/proc/$PID_VAL" ]] || die "PID $PID_VAL does not exist"
+
+    parse_df "$@"; set -- "${ARGS_REST[@]}"
+    TITLE="pid$PID_VAL"
+    OUT_DIR="$OUT_ROOT/${TITLE}_${TS}"
+    mkdir -p "$OUT_DIR"
+
+    echo "[Record] pid=$PID_VAL ${DURATION}s F${FREQ}"
+    perf record -F "$FREQ" -g --call-graph dwarf -p "$PID_VAL" \
+      --output="$OUT_DIR/perf.data" -- sleep "$DURATION" || true
+    post_process "$OUT_DIR" "$TITLE"
     ;;
+
   system)
-    record_system
+    # system [duration] [freq]
+    parse_df "$@"; set -- "${ARGS_REST[@]}"
+    TITLE="system"
+    OUT_DIR="$OUT_ROOT/${TITLE}_${TS}"
+    mkdir -p "$OUT_DIR"
+
+    echo "[Record] system ${DURATION}s F${FREQ}"
+    perf record -F "$FREQ" -g --call-graph dwarf -a \
+      --output="$OUT_DIR/perf.data" -- sleep "$DURATION" || true
+    post_process "$OUT_DIR" "$TITLE"
     ;;
+
   *)
-    die "Unknown mode: $MODE (use: run|pid|system)"
+    die "Unknown mode: $MODE (use: case | pid | system)"
     ;;
 esac
 
-post_process
-
 echo "Artifacts:"
-echo "  - perf.data   : $OUT_DIR/perf.data"
-echo "  - stacks      : $OUT_DIR/perf.stacks"
-echo "  - folded      : $OUT_DIR/perf.folded"
-echo "  - flame.svg   : $OUT_DIR/flame.svg"
-echo
-echo "Open the SVG in a browser or download it, e.g.:"
-echo "  scp ec2-user@<your-ec2-ip>:$OUT_DIR/flame.svg ."
+echo "  - $OUT_DIR/perf.data"
+echo "  - $OUT_DIR/perf.stacks"
+echo "  - $OUT_DIR/perf.folded"
+echo "  - $OUT_DIR/flame.svg"

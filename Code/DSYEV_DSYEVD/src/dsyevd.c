@@ -1,14 +1,11 @@
-// dsyedv_run_arm.c (Linux + ARM only)
+// dsyevd_run.c — portable (OpenBLAS / ArmPL / Netlib), no vendor headers, no macros
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <openblas_config.h>
-/* Explicit forward declarations in case the header doesn't provide them */
-extern const char* openblas_get_config(void);
-extern const char* openblas_get_corename(void);
 
+/* Fortran LAPACK symbol (vendor-agnostic) */
 extern void dsyevd_(const char *JOBZ, const char *UPLO, const int *N,
                     double *A, const int *LDA,
                     double *W,
@@ -27,7 +24,7 @@ static void fill_symmetric(double *A, int n) {
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i <= j; ++i) {
             double v = (i == j) ? (10.0 + 0.01 * i) : (0.1 * (i + j));
-            A[i + j * n] = v;
+            A[i + j * n] = v;        // column-major
             A[j + i * n] = v;
         }
     }
@@ -38,33 +35,34 @@ static double elapsed_seconds(struct timespec a, struct timespec b) {
 }
 
 int main(void) {
-
-    printf("Using OpenBLAS: %s | Core: %s\n",
-           openblas_get_config(), openblas_get_corename());
-
     const int n = 4000;
     const int lda = n;
     const char jobz = 'V';
     const char uplo = 'U';
 
-    double *A = (double*)malloc(sizeof(double) * (size_t)n * (size_t)lda);
-    double *W = (double*)malloc(sizeof(double) * (size_t)n);
+    double *A = (double*)malloc((size_t)n * (size_t)lda * sizeof(double));
+    double *W = (double*)malloc((size_t)n * sizeof(double));
     if (!A || !W) { fprintf(stderr, "Allocation failed.\n"); return 1; }
     fill_symmetric(A, n);
 
     int info = 0, lwork = -1, liwork = -1;
     double wkopt; int iwkopt;
 
+    /* workspace query */
     dsyevd_(&jobz, &uplo, &n, A, &lda, W,
             &wkopt, &lwork, &iwkopt, &liwork, &info);
-    if (info != 0) { fprintf(stderr, "DSYEVD workspace query failed, INFO=%d\n", info); return 2; }
+    if (info != 0) {
+        fprintf(stderr, "DSYEVD workspace query failed, INFO=%d\n", info);
+        free(W); free(A);
+        return 2;
+    }
 
     lwork  = (int)wkopt;
     liwork = iwkopt;
 
-    double *WORK  = (double*)malloc(sizeof(double) * (size_t)lwork);
-    int    *IWORK = (int*)   malloc(sizeof(int)    * (size_t)liwork);
-    if (!WORK || !IWORK) { fprintf(stderr, "Workspace allocation failed.\n"); return 3; }
+    double *WORK  = (double*)malloc((size_t)lwork  * sizeof(double));
+    int    *IWORK = (int*)   malloc((size_t)liwork * sizeof(int));
+    if (!WORK || !IWORK) { fprintf(stderr, "Workspace allocation failed.\n"); free(W); free(A); return 3; }
 
     struct timespec t0, t1;
     clock_gettime(CLOCK_MONOTONIC, &t0);
@@ -72,12 +70,17 @@ int main(void) {
             WORK, &lwork, IWORK, &liwork, &info);
     clock_gettime(CLOCK_MONOTONIC, &t1);
 
-    if (info != 0) { fprintf(stderr, "DSYEVD failed, INFO=%d\n", info); return 4; }
+    if (info != 0) {
+        fprintf(stderr, "DSYEVD failed, INFO=%d\n", info);
+        free(IWORK); free(WORK); free(W); free(A);
+        return 4;
+    }
 
     double elapsed_sec = elapsed_seconds(t0, t1);
     printf("DSYEVD computation took %.3f seconds.\n", elapsed_sec);
 
-    const char *outdir = "output";
+    /* outputs */
+    const char *outdir = "../output";
     ensure_dir(outdir);
 
     char path_time[256], path_w[256], path_v[256];

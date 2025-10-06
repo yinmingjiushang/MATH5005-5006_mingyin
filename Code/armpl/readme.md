@@ -40,4 +40,5 @@ tar -xf arm-performance-libraries_25.07_rpm_gcc.tar
 
 cd arm-performance-libraries_25.07_rpm
 
-bash arm-performance-libraries_25.07_rpm.sh --accept --install-to ./armpl_local
+nohup bash arm-performance-libraries_25.07_rpm.sh --accept --install-to ./armpl_local > armpl_install.log 2>&1 &
+
