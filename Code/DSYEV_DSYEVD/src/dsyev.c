@@ -46,6 +46,12 @@ int main(void) {
     const char jobz = 'V';
     const char uplo = 'U';
 
+    if (jobz == 'N') {
+        printf("Mode: Eigenvalues only (JOBZ = 'N')\n");
+    } else {
+        printf("Mode: Eigenvalues and Eigenvectors (JOBZ = 'V')\n");
+    }
+
     double *A = (double*)malloc(sizeof(double) * (size_t)n * (size_t)lda);
     double *W = (double*)malloc(sizeof(double) * (size_t)n);
     if (!A || !W) { fprintf(stderr, "Allocation failed.\n"); return 1; }

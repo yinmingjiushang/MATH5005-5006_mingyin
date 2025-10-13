@@ -11,7 +11,7 @@ Outputs:
 """
 
 import os
-# --- Pin BLAS threads to 1 for fair single-thread timing （固定为单线程，保证可比性）---
+# --- Pin BLAS threads to 1 for fair single-thread timing ---
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"]      = "1"
 os.environ["MKL_NUM_THREADS"]      = "1"
@@ -26,8 +26,8 @@ from scipy.linalg import lapack
 
 # ------------------ Config ---------------------
 sizes = [500, 1000, 2000, 4000, 8000]   # adjust as needed
-reps  = 5                                # number of repeats per measurement (取中位数)
-seed  = 0                                # RNG seed for reproducibility（可复现）
+reps  = 5                                # number of repeats per measurement
+seed  = 0                                # RNG seed for reproducibility
 
 output_dir = "./output"
 os.makedirs(output_dir, exist_ok=True)
@@ -55,7 +55,6 @@ def median_time(func, reps, *args, **kwargs):
 def make_symmetric_f(n, rng):
     """
     Create a symmetric matrix in Fortran order to avoid internal copying.
-    生成 Fortran 布局的对称矩阵，减少隐式拷贝。
     """
     A = rng.standard_normal((n, n))
     A = (A + A.T) * 0.5
@@ -78,7 +77,7 @@ def write_env(path):
         except Exception:
             pass
 
-# ------------------ Warm-up （预热一次，降低首次调用偏差） ---------------------
+# ------------------ Warm-up  ---------------------
 def warmup():
     rng = np.random.default_rng(12345)
     A = make_symmetric_f(64, rng)
@@ -137,7 +136,7 @@ def run_benchmark(sizes, reps, seed):
             raise RuntimeError(f"DSYEVD(V) failed for n={n}, INFO={info_dc_V}")
         print(f"DSYEVD (V):  {t_dc_V:.3f} s  (median of {reps})")
 
-        # Speedups (QR/DC) > 1 means DSYEVD is faster（>1 表示 DSYEVD 更快）
+        # Speedups (QR/DC) > 1 means DSYEVD is faster
         speedup_N = t_qr_N / t_dc_N if t_dc_N > 0 else np.nan
         speedup_V = t_qr_V / t_dc_V if t_dc_V > 0 else np.nan
 

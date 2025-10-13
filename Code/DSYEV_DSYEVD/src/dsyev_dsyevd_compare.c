@@ -102,6 +102,12 @@ int main(void) {
 
     ensure_output_dir();
 
+    if (jobz == 'N') {
+        printf("Mode: Eigenvalues only (JOBZ = 'N')\n");
+    } else {
+        printf("Mode: Eigenvalues and Eigenvectors (JOBZ = 'V')\n");
+    }
+
     /* -------- allocate -------- */
     size_t nn   = (size_t)N * (size_t)N;
     double *A0  = (double*)malloc(nn * sizeof(double));
