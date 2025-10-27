@@ -1,17 +1,17 @@
-/* wrap_syevd.c — DSYEVD full-path timing wrappers:
- * - Top-level: DSYEVD
- * - Tridiag + eigensolvers: DSYTRD, DORGTR, DSTERF, DSTEDC, DSTEQR
- * - D&C subtree: DLAED0..9, DLAEDA
- * - Back-transform chain: DORMTR -> (DORMQL/DORMQR) -> DLARFT/DLARFB [-> DLARF]
- * - BLAS kernels: DGEMM, DGEMV, DTRMM, DTRMV, DGER, DCOPY, DSCAL, DROT
+/* wrap_syevd.c — DSYEVD full-path timing wrappers WITH SCOPE ATTRIBUTION
+ * Root scopes used here: "sytrd", "stedc", "dormtr"
+ * We DO NOT use dorgtr as a root (per user's pipeline).
  *
- * Link with --wrap for every symbol you want timed. See bottom for a list.
+ * Link with --wrap for every symbol you want timed. See your build script.
  */
 
+#define _POSIX_C_SOURCE 200112L
 #include <time.h>
 
-/* ===== timer glue (provided by your wrap_timers.c) ===== */
+/* ===== timer glue (provided by wrap_timers.c) ===== */
 extern void __stedc_timer_add(const char *name, double dt);
+extern void __stedc_scope_push(const char *scope);
+extern void __stedc_scope_pop(void);
 static inline double __t_now(void){
     struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t);
     return t.tv_sec + t.tv_nsec * 1e-9;
@@ -41,9 +41,6 @@ extern void __real_dsyevd_(char *JOBZ, char *UPLO, lapack_int *N,
 extern void __real_dsytrd_(char *UPLO, lapack_int *N, double *A, lapack_int *LDA,
                            double *D, double *E, double *TAU,
                            double *WORK, lapack_int *LWORK, lapack_int *INFO);
-
-extern void __real_dorgtr_(char *UPLO, lapack_int *N, double *A, lapack_int *LDA,
-                           double *TAU, double *WORK, lapack_int *LWORK, lapack_int *INFO);
 
 extern void __real_dsterf_(lapack_int *N, double *D, double *E, lapack_int *INFO);
 
@@ -201,22 +198,16 @@ void __wrap_dsyevd_(char *jobz, char *uplo, lapack_int *n,
     if (!is_query) __stedc_timer_add("dsyevd_", __t_now() - t0);
 }
 
-/* ---- Tridiagonalization + forming Q ---- */
+/* ---- Tridiagonalization (ROOT SCOPE: sytrd) ---- */
 void __wrap_dsytrd_(char *uplo, lapack_int *n, double *A, lapack_int *lda,
                     double *D, double *E, double *TAU,
                     double *WORK, lapack_int *LWORK, lapack_int *INFO)
 {
+    __stedc_scope_push("sytrd");
     double t0 = __t_now();
     __real_dsytrd_(uplo, n, A, lda, D, E, TAU, WORK, LWORK, INFO);
     __stedc_timer_add("dsytrd_", __t_now() - t0);
-}
-
-void __wrap_dorgtr_(char *uplo, lapack_int *n, double *A, lapack_int *lda,
-                    double *TAU, double *WORK, lapack_int *LWORK, lapack_int *INFO)
-{
-    double t0 = __t_now();
-    __real_dorgtr_(uplo, n, A, lda, TAU, WORK, LWORK, INFO);
-    __stedc_timer_add("dorgtr_", __t_now() - t0);
+    __stedc_scope_pop();
 }
 
 /* ---- Tri eigen (values only) ---- */
@@ -227,16 +218,20 @@ void __wrap_dsterf_(lapack_int *n, double *D, double *E, lapack_int *info)
     __stedc_timer_add("dsterf_", __t_now() - t0);
 }
 
-/* ---- STEDC + helpers ---- */
+/* ---- STEDC (ROOT SCOPE: stedc) + helpers ---- */
 void __wrap_dstedc_(char *compz, lapack_int *n, double *d, double *e,
                     double *z, lapack_int *ldz,
                     double *work, lapack_int *lwork,
                     lapack_int *iwork, lapack_int *liwork, lapack_int *info)
 {
     int is_query = (lwork && *lwork == -1) || (liwork && *liwork == -1);
+    if (!is_query) __stedc_scope_push("stedc");
     double t0 = is_query ? 0.0 : __t_now();
     __real_dstedc_(compz, n, d, e, z, ldz, work, lwork, iwork, liwork, info);
-    if (!is_query) __stedc_timer_add("dstedc_", __t_now() - t0);
+    if (!is_query) {
+        __stedc_timer_add("dstedc_", __t_now() - t0);
+        __stedc_scope_pop();
+    }
 }
 
 void __wrap_dsteqr_(char *compz, lapack_int *n, double *d, double *e,
@@ -353,10 +348,8 @@ void __wrap_dlaed7_(lapack_int *icompq, lapack_int *n, lapack_int *qsiz,
 void __wrap_dlaed8_(lapack_int *icompq, lapack_int *k, lapack_int *n,
                     lapack_int *qsiz,
                     double *d, double *q, lapack_int *ldq, lapack_int *indxq,
-                    double *rho, lapack_int *cutpnt,        /* <-- lapack_int* */
-                    double *z, double *dlambda,
-                    double *q2, lapack_int *ldq2,
-                    double *w, lapack_int *perm,            /* <-- lapack_int* */
+                    double *rho, lapack_int *cutpnt, double *z, double *dlambda,
+                    double *q2, lapack_int *ldq2, double *w, lapack_int *perm,
                     lapack_int *givptr, lapack_int *givcol, double *givnum,
                     lapack_int *indxp, lapack_int *indx, lapack_int *info)
 {
@@ -368,7 +361,6 @@ void __wrap_dlaed8_(lapack_int *icompq, lapack_int *k, lapack_int *n,
                    indxp, indx, info);
     __stedc_timer_add("dlaed8_", __t_now() - t0);
 }
-
 
 void __wrap_dlaed9_(lapack_int *k, lapack_int *kstart, lapack_int *kstop,
                     lapack_int *n, double *d, double *q, lapack_int *ldq,
@@ -390,7 +382,7 @@ void __wrap_dlaeda_(lapack_int *n, lapack_int *tlvls, lapack_int *curlvl, lapack
     __stedc_timer_add("dlaeda_", __t_now() - t0);
 }
 
-/* ---- Back-transform chain ---- */
+/* ---- Back-transform chain (ROOT SCOPE: dormtr) ---- */
 void __wrap_dormtr_(char *SIDE, char *UPLO, char *TRANS,
                     lapack_int *M, lapack_int *N,
                     double *A, lapack_int *LDA, double *TAU,
@@ -398,9 +390,13 @@ void __wrap_dormtr_(char *SIDE, char *UPLO, char *TRANS,
                     double *WORK, lapack_int *LWORK, lapack_int *INFO)
 {
     int is_query = (LWORK && *LWORK == -1);
+    if (!is_query) __stedc_scope_push("dormtr");
     double t0 = is_query ? 0.0 : __t_now();
     __real_dormtr_(SIDE, UPLO, TRANS, M, N, A, LDA, TAU, C, LDC, WORK, LWORK, INFO);
-    if (!is_query) __stedc_timer_add("dormtr_", __t_now() - t0);
+    if (!is_query) {
+        __stedc_timer_add("dormtr_", __t_now() - t0);
+        __stedc_scope_pop();
+    }
 }
 
 void __wrap_dormql_(char *SIDE, char *TRANS, lapack_int *M, lapack_int *N, lapack_int *K,

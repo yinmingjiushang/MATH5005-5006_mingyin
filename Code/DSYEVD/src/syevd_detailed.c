@@ -1,6 +1,8 @@
 // syevd.c — Build a KMS SPD matrix A, then call DSYEVD to get
 // eigenvalues (+ eigenvectors if JOBZ='V'). Column-major, vendor-agnostic.
 
+#define _POSIX_C_SOURCE 200112L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -15,9 +17,9 @@ extern void dsyevd_(const char *JOBZ, const char *UPLO, const int *N,
                     int *IWORK, const int *LIWORK,
                     int *INFO);
 
-/* (Optional, works when linking OpenBLAS; harmless if you remove) */
-extern char* openblas_get_config(void);
-extern char* openblas_get_corename(void);
+/* Optional (safe as weak symbols): available when linking OpenBLAS */
+__attribute__((weak)) extern char* openblas_get_config(void);
+__attribute__((weak)) extern char* openblas_get_corename(void);
 
 /* --------- Utilities --------- */
 static void ensure_dir(const char *path) {
@@ -66,11 +68,10 @@ int main(void)
     const double rho   = 0.95;  // KMS difficulty: 0.8 easy ... 0.98 harder
     const double delta = 0.0;   // small positive shift if desired
 
-    /* Optional OpenBLAS banner (comment out if linking another LAPACK) */
-    #ifdef __OPENBLAS_CONFIG_H__
-    printf("OpenBLAS config: %s\n", openblas_get_config());
-    printf("OpenBLAS core  : %s\n", openblas_get_corename());
-    #endif
+    if (openblas_get_config && openblas_get_corename) {
+        printf("OpenBLAS config: %s\n", openblas_get_config());
+        printf("OpenBLAS core  : %s\n", openblas_get_corename());
+    }
 
     if (jobz == 'N')
         printf("Mode: DSYEVD (Eigenvalues only, JOBZ='N')\n");
@@ -78,7 +79,7 @@ int main(void)
         printf("Mode: DSYEVD (Eigenvalues + eigenvectors, JOBZ='V')\n");
 
     /* ---- Allocate ---- */
-    double *A = (double*)malloc((size_t)n * (size_t)lda * sizeof(double)); // input & (on exit) eigenvectors
+    double *A = (double*)malloc((size_t)n * (size_t)lda * sizeof(double)); // on exit: eigenvectors if JOBZ='V'
     double *W = (double*)malloc((size_t)n * sizeof(double));               // eigenvalues
     if (!A || !W) {
         fprintf(stderr, "Allocation failed.\n");
@@ -117,38 +118,48 @@ int main(void)
     /* ---- Report timings ---- */
     printf("DSYEVD took %.3f s\n", time_syevd);
 
-    /* ---- Write outputs (same pattern as before) ---- */
-    const char *outdir = "../output";
-    ensure_dir(outdir);
+    /* ---- Write outputs (lightweight) ---- */
+    {
+        const char *outdir = "../output";
+        ensure_dir(outdir);
 
-    char path_time[256], path_w[256], path_v[256];
-    snprintf(path_time, sizeof(path_time), "%s/syevd_time.txt", outdir);
-    snprintf(path_w,    sizeof(path_w),    "%s/syevd_eigenvalues.txt", outdir);
-    snprintf(path_v,    sizeof(path_v),    "%s/syevd_eigenvectors.txt", outdir);
+        char path_time[256], path_w[256], path_v[256];
+        snprintf(path_time, sizeof(path_time), "%s/syevd_time.txt", outdir);
+        snprintf(path_w,    sizeof(path_w),    "%s/syevd_eigenvalues.txt", outdir);
+        snprintf(path_v,    sizeof(path_v),    "%s/syevd_eigenvectors.txt", outdir);
 
-    FILE *ft = fopen(path_time, "w");
-    if (ft) {
-        fprintf(ft, "Mode: DSYEVD (JOBZ='%c', UPLO='%c')\n", jobz, uplo);
-        fprintf(ft, "DSYEVD %.6f s\n", time_syevd);
-        fclose(ft);
-    }
+        /* time */
+        FILE *ft = fopen(path_time, "w");
+        if (ft) {
+            fprintf(ft, "Mode: DSYEVD (JOBZ='%c', UPLO='%c')\n", jobz, uplo);
+            fprintf(ft, "DSYEVD %.6f s\n", time_syevd);
+            fclose(ft);
+        }
 
-    FILE *fw = fopen(path_w, "w");
-    if (fw) {
-        for (int i = 0; i < n; ++i) fprintf(fw, "%.12e\n", W[i]);
-        fclose(fw);
-    }
+        /* first up to 5 eigenvalues (ascending) */
+        FILE *fw = fopen(path_w, "w");
+        if (fw) {
+            int k = n < 5 ? n : 5;
+            for (int i = 0; i < k; ++i)
+                fprintf(fw, "%.12e\n", W[i]);
+            fprintf(fw, "# truncated: total %d eigenvalues\n", n);
+            fclose(fw);
+        }
 
-    /* On exit, A contains eigenvectors in columns (if JOBZ='V') */
-    if (jobz == 'V') {
-        FILE *fv = fopen(path_v, "w");
-        if (fv) {
-            for (int j = 0; j < n; ++j) {
-                for (int i = 0; i < n; ++i) {
-                    fprintf(fv, "%.6e%c", A[i + (size_t)j * n], (i == n-1) ? '\n' : ' ');
+        /* first up to 5 eigenvector columns (full length) */
+        if (jobz == 'V') {
+            FILE *fv = fopen(path_v, "w");
+            if (fv) {
+                int k = n < 5 ? n : 5;
+                fprintf(fv, "# columns 0..%d, each of length n=%d\n", k-1, n);
+                for (int j = 0; j < k; ++j) {
+                    fprintf(fv, "# column %d (eigenvalue index %d)\n", j, j);
+                    for (int i = 0; i < n; ++i)
+                        fprintf(fv, "%.6e\n", A[i + (size_t)j * n]);
                 }
+                fprintf(fv, "# truncated: total matrix %d x %d\n", n, n);
+                fclose(fv);
             }
-            fclose(fv);
         }
     }
 
