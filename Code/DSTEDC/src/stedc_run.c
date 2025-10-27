@@ -75,7 +75,7 @@ int main(void)
     const int   n    = 4000;     // matrix size
     const int   lda  = n;
     const char  uplo = 'U';      // keep 'U' along the whole chain
-    const char  compz = 'V';     // we want eigenvectors of A (not only T)
+    const char  compz = 'I';     // we want eigenvectors of A (not only T)
 //    const char  compz = 'N';
     const double rho   = 0.95;   // KMS parameter: 0.8 easy ... 0.98 harder
     const double delta = 0.0;    // small positive shift if you want more safety

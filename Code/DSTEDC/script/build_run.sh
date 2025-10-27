@@ -38,20 +38,39 @@ LDFLAGS_AP="$ARMPL_PREFIX/lib/libarmpl.a -lpthread -ldl $LIBS_FORTRAN $LIBS_MATH
 # ====== 3. Sources ======
 SRC_DIR="../src"
 SRC_STEDC_RUN="$SRC_DIR/stedc_run.c"
-SRC_WRAP_TIMERS="$SRC_DIR/wrap_timers.c"
-SRC_WRAP_STEDC="$SRC_DIR/wrap_stedc.c"
+SRC_WRAP_TIMERS="$SRC_DIR/wrap_timers2.c"
+SRC_WRAP_STEDC="$SRC_DIR/wrap_stedc2.c"
 
 # ====== 4. STEDC subtree symbols to wrap ======
+#WRAP_SYMS=(
+#  dstedc_
+#  dlamrg_ dlasrt_ dlacpy_ dsteqr_
+#  dlaed0_ dlaed1_ dlaed2_ dlaed3_ dlaed4_ dlaed5_ dlaed6_ dlaed7_ dlaed8_ dlaed9_ dlaeda_
+#  dgemm_ dgemv_ dcopy_ dscal_ drot_
+#  cblas_dgemm cblas_dgemv
+#
+#)
+#WRAP_LDFLAGS=(); for s in "${WRAP_SYMS[@]}"; do WRAP_LDFLAGS+=("-Wl,--wrap=${s}"); done
+
 WRAP_SYMS=(
-  dstedc_
-  dlamrg_ dlasrt_ dlacpy_ dsteqr_
-  dlaed0_ dlaed1_ dlaed2_ dlaed3_ dlaed4_ dlaed5_ dlaed6_ dlaed7_ dlaed8_ dlaed9_ dlaeda_
-  dgemm_ dgemv_ dcopy_ dscal_ drot_
+  # STEDC 主体与常见路径
+  dstedc_ dsteqr_ dlamrg_ dlasrt_ dlacpy_
+
+  # Divide & Conquer 树
+  dlaed0_ dlaed1_ dlaed2_ dlaed3_ dlaed4_
+  dlaed5_ dlaed6_ dlaed7_ dlaed8_ dlaed9_ dlaeda_
+
+  # 额外常见辅助
+  dlaset_ dlascl_ dlasr_ dlartg_
+
+  # BLAS (Fortran)
+  dgemm_ dgemv_ daxpy_ dcopy_ dscal_ drot_ dswap_ idamax_
+
+  # CBLAS（若库内部走 CBLAS 入口）
   cblas_dgemm cblas_dgemv
-
 )
-WRAP_LDFLAGS=(); for s in "${WRAP_SYMS[@]}"; do WRAP_LDFLAGS+=("-Wl,--wrap=${s}"); done
 
+WRAP_LDFLAGS=(); for s in "${WRAP_SYMS[@]}"; do WRAP_LDFLAGS+=("-Wl,--wrap=${s}"); done
 
 
 

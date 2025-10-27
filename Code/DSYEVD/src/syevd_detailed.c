@@ -59,10 +59,10 @@ static void fill_kms(double *A, int n, double rho, double delta)
 int main(void)
 {
     /* ---- Config ---- */
-    const int   n     = 4000;   // matrix size
+    const int   n     = 4096;   // matrix size
     const int   lda   = n;
     const char  uplo  = 'U';    // keep 'U' consistently
-    const char  jobz  = 'N';    // 'V' for eigenvectors, 'N' for values only
+    const char  jobz  = 'V';    // 'V' for eigenvectors, 'N' for values only
     const double rho   = 0.95;  // KMS difficulty: 0.8 easy ... 0.98 harder
     const double delta = 0.0;   // small positive shift if desired
 

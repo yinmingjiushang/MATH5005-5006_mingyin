@@ -102,7 +102,7 @@ int main(void) {
 
     ensure_output_dir();
 
-    if (jobz == 'N') {
+    if (JOBZ == 'N') {
         printf("Mode: Eigenvalues only (JOBZ = 'N')\n");
     } else {
         printf("Mode: Eigenvalues and Eigenvectors (JOBZ = 'V')\n");
