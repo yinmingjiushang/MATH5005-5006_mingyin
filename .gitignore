@@ -9,3 +9,7 @@ Code/LAPACK/LAPACK_src/
 Code/openblas/OpenBLAS-src/
 Code/openblas/openblas_install/
 Code/armpl/arm-performance-libraries_25.07_rpm_gcc.tar
+Code/armpl/arm-performance-libraries_25.07_rpm/
+.idea/
+Code/DSYEV_DSYEVD/script/tools/
+Code/DSYEV_DSYEVD/src/openblas_info
