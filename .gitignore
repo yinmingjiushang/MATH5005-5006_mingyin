@@ -1,0 +1,10 @@
+## Generated experiment outputs
+**/output/
+
+## Built LAPACK artifacts
+Code/LAPACK/build/
+Code/LAPACK/LAPACK_src/
+
+## Built OpenBLAS artifacts
+Code/openblas/OpenBLAS-src/
+Code/openblas/openblas_install/
