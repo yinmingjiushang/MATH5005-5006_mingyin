@@ -4,6 +4,7 @@
 ## Built LAPACK artifacts
 Code/LAPACK/build/
 Code/LAPACK/LAPACK_src/
+Code/LAPACK/install/
 
 ## Built OpenBLAS artifacts
 Code/openblas/OpenBLAS-src/
