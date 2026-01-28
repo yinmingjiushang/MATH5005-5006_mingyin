@@ -32,7 +32,7 @@ INSTALL_INC_DIR="$PREFIX/include"
 : "${DYNAMIC_ARCH:=0}"                             # 1=multiple-arch fat binary
 : "${TARGET:=auto}"                                # auto=detect NEOVERSE*
 : "${WITH_DEBUG:=1}"                               # 1=keep symbols for perf
-: "${NUM_THREADS:=8}"                              # compile-time thread cap
+: "${NUM_THREADS:=4}"                              # compile-time thread cap
 : "${CLEAN_LEVEL:=0}"                              # 0 clean, 1 distclean, 2 git clean -xdf
 : "${RECLONE:=0}"                                  # 1 fresh clone
 : "${SKIP_BUILD:=0}"                               # 1 only clean, skip build
