@@ -121,6 +121,7 @@ def main():
         out_dir, f"{args.routine}_{args.lib_a}_vs_{args.lib_b}.csv"
     )
 
+    rows_data = []
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow([
@@ -144,8 +145,26 @@ def main():
                 args.lib_a, args.lib_b, args.routine, t, n,
                 f"{max_abs_eval:.6e}", f"{max_rel_eval:.6e}", f"{max_abs_evec:.6e}"
             ])
+            rows_data.append((t, n, max_abs_eval, max_rel_eval, max_abs_evec))
 
-    print(f"[OK] Wrote comparison: {out_path}")
+    # --- Terminal table: numerical agreement at a glance ---
+    print()
+    print(f"  [{args.routine}] {args.lib_a} vs {args.lib_b}  numerical diff")
+    print("  " + "-" * 62)
+    print(f"  {'T':>3} {'N':>6}   max_abs_eval   max_rel_eval   max_abs_evec")
+    print("  " + "-" * 62)
+    for t, n, ae, re, av in rows_data:
+        print(f"  {t:>3} {n:>6}   {ae:.4e}   {re:.4e}   {av:.4e}")
+    print("  " + "-" * 62)
+    if rows_data:
+        max_ae = max(r[2] for r in rows_data)
+        max_re = max(r[3] for r in rows_data)
+        tol_ok = max_ae < 1e-10 and max_re < 1e-10
+        print(f"  Summary: max_abs_eval={max_ae:.2e}, max_rel_eval={max_re:.2e}  ->  {'OK (agree)' if tol_ok else 'differs, check'}")
+    else:
+        print("  Summary: no common (T,N) runs")
+    print(f"  CSV: {out_path}")
+    print()
 
 
 if __name__ == "__main__":

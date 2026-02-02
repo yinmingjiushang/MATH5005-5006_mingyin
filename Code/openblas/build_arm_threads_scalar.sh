@@ -11,7 +11,7 @@
 #   USE_OPENMP=0                # 0=pthreads backend, 1=OpenMP backend
 #   STATIC_ONLY=0               # 1=build static only (.a)
 #   DYNAMIC_ARCH=0              # 1=build fat binary (multi-arch); slower build & larger .so
-#   TARGET=NEOVERSEN1           # force non-SVE core by default
+#   TARGET=ARMV8                # scalar build: use ARMV8 + ONLY_C=1 (no NEON/SIMD)
 #   WITH_DEBUG=1                # 1=keep symbols & frame pointers (perf/FlameGraph friendly)
 #   NUM_THREADS=4               # compile-time max threads (cap)
 #   CLEAN_LEVEL=0               # 0=make clean, 1=make distclean, 2=git clean -xdf (deep)
@@ -31,7 +31,7 @@ INSTALL_INC_DIR="$PREFIX/include"
 : "${USE_OPENMP:=0}"                               # 0=pthreads, 1=OpenMP
 : "${STATIC_ONLY:=0}"                              # 1=build static only
 : "${DYNAMIC_ARCH:=0}"                             # 1=multiple-arch fat binary
-: "${TARGET:=NEOVERSEN1}"                           # force non-SVE core by default
+: "${TARGET:=ARMV8}"                               # scalar: ARMV8 + ONLY_C=1, no NEON
 : "${WITH_DEBUG:=1}"                               # 1=keep symbols for perf
 : "${NUM_THREADS:=4}"                              # compile-time thread cap
 : "${CLEAN_LEVEL:=0}"                              # 0 clean, 1 distclean, 2 git clean -xdf
@@ -45,7 +45,7 @@ echo "==> PREFIX         : $PREFIX"
 echo "==> USE_OPENMP     : $USE_OPENMP"
 echo "==> STATIC_ONLY    : $STATIC_ONLY"
 echo "==> DYNAMIC_ARCH   : $DYNAMIC_ARCH"
-echo "==> TARGET(opt)    : $TARGET"
+echo "==> TARGET(opt)    : $TARGET (scalar: ARMV8 + ONLY_C=1)"
 echo "==> NUM_THREADS    : $NUM_THREADS (compile-time cap)"
 echo "==> WITH_DEBUG     : $WITH_DEBUG  (adds -g -fno-omit-frame-pointer; disable strip)"
 echo "==> CLEAN_LEVEL    : $CLEAN_LEVEL (0=clean, 1=distclean, 2=git clean -xdf)"
@@ -131,7 +131,10 @@ fi
 : "${CC:=gcc}"; : "${FC:=gfortran}"; : "${AR:=ar}"; : "${RANLIB:=ranlib}"
 export CC FC AR RANLIB
 
-MAKE_OPTS=( "NO_AFFINITY=1" "NO_TEST=1" "TARGET=$TARGET" "NUM_THREADS=$NUM_THREADS" )
+# Scalar build: ONLY_C=1 = C kernels only (no ARM/NEON assembly); -fno-tree-vectorize = no auto-vectorization
+MAKE_OPTS=( "NO_AFFINITY=1" "NO_TEST=1" "TARGET=$TARGET" "NUM_THREADS=$NUM_THREADS" "ONLY_C=1" )
+MAKE_OPTS+=( 'CFLAGS+=-fno-tree-vectorize' )
+MAKE_OPTS+=( 'FCFLAGS+=-fno-tree-vectorize' )
 [[ "$DYNAMIC_ARCH" == "1" ]] && MAKE_OPTS+=( "DYNAMIC_ARCH=1" )
 [[ "$USE_OPENMP" == "1" ]] && MAKE_OPTS+=( "USE_OPENMP=1" ) || MAKE_OPTS+=( "USE_OPENMP=0" )
 [[ "$STATIC_ONLY" == "1" ]] && MAKE_OPTS+=( "NO_SHARED=1" )
@@ -199,7 +202,8 @@ gcc /tmp/check_openblas.c -DSET_THR="$SET_THR" \
   -I"$INSTALL_INC_DIR" -L"$INSTALL_LIB_DIR" -lopenblas -lm -o "$CHECK_BIN"
 
 echo "==> OpenBLAS self-check:"
-CHECK_OUT="$(LD_LIBRARY_PATH="$INSTALL_LIB_DIR:${LD_LIBRARY_PATH:-}" "$CHECK_BIN" 2>&1 | tee /dev/stderr)"
+CHECK_OUT="$(LD_LIBRARY_PATH="$INSTALL_LIB_DIR:${LD_LIBRARY_PATH:-}" "$CHECK_BIN" 2>&1)"
+echo "$CHECK_OUT"
 echo
 
 # Parse MAX_THREADS from config string if present

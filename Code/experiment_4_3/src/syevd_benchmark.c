@@ -150,8 +150,8 @@ static void fill_kms(double *A, int n, double rho, double delta) {
 int main(void) {
     const char jobz = 'V', uplo = 'U';
     const double rho = 0.95, delta = 0.0;
-    // const int sizes[]   = {512, 1024, 2048, 4096, 8192};
-    const int sizes[]   = {512, 1024, 2048};
+    const int sizes[]   = {512, 1024, 2048, 4096, 8192};
+    // const int sizes[]   = {512, 1024, 2048};
     const int nsizes    = sizeof(sizes) / sizeof(sizes[0]);
     const int threads[] = {1};
     const int nthr      = sizeof(threads) / sizeof(threads[0]);

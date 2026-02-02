@@ -14,3 +14,7 @@ Code/armpl/arm-performance-libraries_25.07_rpm/
 .idea/
 Code/DSYEV_DSYEVD/script/tools/
 Code/DSYEV_DSYEVD/src/openblas_info
+
+## Experiment 4.x: deprecated / build artifacts
+Code/experiment_4_x_useless/
+Code/openblas_scalar/
