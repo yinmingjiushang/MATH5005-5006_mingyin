@@ -44,7 +44,7 @@
 ```bash
 cd Code/experiment_4_4/script
 
-# 主实验：各因素加速贡献分解（复用 4.2、4.3 数据）
+# 主实验：各因素加速贡献分解（复用 4.2、4.3 实验数据）
 python3 accelerate_decompose.py --root4_2 ../../experiment_4_2/output --root4_3 ../../experiment_4_3/output
 ```
 

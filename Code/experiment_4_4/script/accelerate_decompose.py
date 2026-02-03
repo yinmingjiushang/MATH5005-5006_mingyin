@@ -33,8 +33,8 @@ def load_simple_csv(path):
 
 def main():
     ap = argparse.ArgumentParser(description="Acceleration decomposition (4.4)")
-    ap.add_argument("--root4_2", default="../../experiment_4_2/output", help="4.2 output root")
-    ap.add_argument("--root4_3", default="../../experiment_4_3/output", help="4.3 output root")
+    ap.add_argument("--root4_2", default="../../experiment_4_2/output", help="4.2 BLAS experiment output root")
+    ap.add_argument("--root4_3", default="../../experiment_4_3/output", help="4.3 SIMD experiment output root")
     ap.add_argument("--out", default=None, help="Output CSV path")
     args = ap.parse_args()
 
