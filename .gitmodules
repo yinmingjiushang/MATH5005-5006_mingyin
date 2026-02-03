@@ -1,0 +1,3 @@
+[submodule "latex"]
+	path = latex
+	url = git@github.com:yinmingjiushang/math5005_5006_overleaf.git

@@ -18,3 +18,12 @@ Code/DSYEV_DSYEVD/src/openblas_info
 ## Experiment 4.x: deprecated / build artifacts
 Code/experiment_4_x_useless/
 Code/openblas_scalar/
+
+## LaTeX submodule
+# Note: latex/ is a git submodule, so its compilation artifacts are managed by its own .gitignore
+
+## Local convenience scripts
+update_latex.sh
+
+## Editor configurations (personal preference)
+.vscode/
