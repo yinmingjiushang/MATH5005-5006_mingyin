@@ -33,7 +33,7 @@ static void print_vector(const char *name, const double *x, int n)
 {
     printf("%s = [", name);
     for (int i = 0; i < n; ++i) {
-        printf("%s%10.6f", i == 0 ? "" : ", ", x[i]);
+        printf("%s%9.4f", i == 0 ? "" : ", ", x[i]);
     }
     printf("]\n");
 }
@@ -45,7 +45,7 @@ static void print_matrix(const char *name, double T[N][N])
         printf("  ");
         for (int j = 0; j < N; ++j) {
             double v = fabs(T[i][j]) < ZERO_TOL ? 0.0 : T[i][j];
-            printf("%11.6f", v);
+            printf("%10.4f", v);
         }
         printf("\n");
     }
@@ -157,7 +157,7 @@ static void apply_similarity(double T[N][N], int k, double c, double s)
 static void report_bulge(double T[N][N], int k)
 {
     if (k + 2 < N) {
-        printf("  bulge moved to (%d,%d), value = %+.6e\n",
+        printf("  bulge moved to (%d,%d), value = %+.4e\n",
                k + 3, k + 1, T[k + 2][k]);
     } else {
         printf("  bulge has exited the matrix; tridiagonal structure is restored.\n");
@@ -168,8 +168,8 @@ static void print_sweep_header(double T[N][N], int sweep_id)
 {
     double mu = wilkinson_shift(T, N);
     printf("\n================ Sweep %d ================\n", sweep_id);
-    printf("Wilkinson shift mu = %.10f\n", mu);
-    printf("Trailing 2x2 block = [[%.6f, %.6f], [%.6f, %.6f]]\n",
+    printf("Wilkinson shift mu = %.4f\n", mu);
+    printf("Trailing 2x2 block = [[%.4f, %.4f], [%.4f, %.4f]]\n",
            T[N - 2][N - 2], T[N - 2][N - 2 + 1], T[N - 1][N - 2], T[N - 1][N - 1]);
 }
 
@@ -177,10 +177,10 @@ static void print_step_intro(int k, double x, double y)
 {
     if (k == 0) {
         printf("\nStep %d: introduce the shift implicitly on rows/cols (1,2)\n", k + 1);
-        printf("  x = [d1 - mu, e1]^T = [% .6f, % .6f]^T\n", x, y);
+        printf("  x = [d1 - mu, e1]^T = [% .4f, % .4f]^T\n", x, y);
     } else {
         printf("\nStep %d: chase the bulge using rows/cols (%d,%d)\n", k + 1, k + 1, k + 2);
-        printf("  x = [T(%d,%d), T(%d,%d)]^T = [% .6f, % .6f]^T\n",
+        printf("  x = [T(%d,%d), T(%d,%d)]^T = [% .4f, % .4f]^T\n",
                k + 1, k, k + 2, k, x, y);
     }
 }
@@ -207,7 +207,7 @@ static void run_first_sweep(double T[N][N], OutputMode mode)
 
         print_step_intro(k, x, y);
         compute_givens(x, y, &c, &s, &r);
-        printf("  G_%d parameters: c = % .6f, s = % .6f, r = %.6f\n", k + 1, c, s, r);
+        printf("  G_%d parameters: c = % .4f, s = % .4f, r = %.4f\n", k + 1, c, s, r);
 
         apply_similarity(T, k, c, s);
         report_bulge(T, k);
@@ -274,7 +274,7 @@ int main(int argc, char **argv)
     printf("\nAfter the first implicit QR sweep:\n");
     print_vector("d", d, N);
     print_vector("e", e, N - 1);
-    printf("|e_5| changed from 1.000000 to %.6e\n", fabs(e[N - 2]));
+    printf("|e_5| changed from 1.0000 to %.4e\n", fabs(e[N - 2]));
 
     printf("\nConvergence summary:\n");
     for (int sweep = 2; sweep <= MAX_SWEEPS; ++sweep) {
@@ -299,7 +299,7 @@ int main(int argc, char **argv)
         }
 
         extract_tridiagonal(T, d, e);
-        printf("  sweep %2d: |e_1|=%9.2e |e_2|=%9.2e |e_3|=%9.2e |e_4|=%9.2e |e_5|=%9.2e\n",
+        printf("  sweep %2d: |e_1|=%11.4e |e_2|=%11.4e |e_3|=%11.4e |e_4|=%11.4e |e_5|=%11.4e\n",
                sweep, fabs(e[0]), fabs(e[1]), fabs(e[2]), fabs(e[3]), fabs(e[4]));
 
         if (converged(T)) {

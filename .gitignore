@@ -27,3 +27,7 @@ update_latex.sh
 
 ## Editor configurations (personal preference)
 .vscode/
+
+## Local Chapter 2.2 scratch files
+Thesis/chapter2/section2_2/*.md
+Thesis/chapter2/section2_2/steqr_example
