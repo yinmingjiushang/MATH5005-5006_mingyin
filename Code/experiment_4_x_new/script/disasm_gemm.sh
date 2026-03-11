@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Disassemble GEMM path in OpenBLAS SVE vs "scalar" builds and classify ISA usage.
+# Disassemble GEMM path in OpenBLAS SVE vs SIMD-baseline builds and classify ISA usage.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
@@ -8,26 +8,26 @@ OUT_DIR="$SCRIPT_DIR/../output/disasm"
 mkdir -p "$OUT_DIR"
 
 SVE_LIB="$CODE_DIR/openblas/openblas_install/lib/libopenblas.a"
-SCALAR_LIB_GLOB="$CODE_DIR/openblas_scalar/lib/libopenblas_armv8p"'*.a'
+SIMD_LIB_GLOB="$CODE_DIR/openblas_simd/lib/libopenblas_armv8p"'*.a'
 
-# resolve scalar lib path
-SCALAR_LIB=""
-for f in $SCALAR_LIB_GLOB; do
+# resolve SIMD-baseline lib path
+SIMD_LIB=""
+for f in $SIMD_LIB_GLOB; do
   if [[ -f "$f" ]]; then
-    SCALAR_LIB="$f"
+    SIMD_LIB="$f"
     break
   fi
 done
-if [[ -z "$SCALAR_LIB" ]]; then
-  SCALAR_LIB="$CODE_DIR/openblas_scalar/lib/libopenblas.a"
+if [[ -z "$SIMD_LIB" ]]; then
+  SIMD_LIB="$CODE_DIR/openblas_simd/lib/libopenblas.a"
 fi
 
 if [[ ! -f "$SVE_LIB" ]]; then
   echo "[X] Missing SVE library: $SVE_LIB"
   exit 1
 fi
-if [[ ! -f "$SCALAR_LIB" ]]; then
-  echo "[X] Missing scalar library: $SCALAR_LIB"
+if [[ ! -f "$SIMD_LIB" ]]; then
+  echo "[X] Missing SIMD-baseline library: $SIMD_LIB"
   exit 1
 fi
 
@@ -44,7 +44,7 @@ summarize_sym() {
   neon_hits=$(rg -n '\bv[0-9]+\.[0-9]*[bhsdq]\b|\bldr\s+q[0-9]+\b|\bstr\s+q[0-9]+\b' "$asm_file" | wc -l | tr -d ' ')
   fmla_hits=$(rg -n '\bfmla\b|\bfmul\b' "$asm_file" | wc -l | tr -d ' ')
 
-  local klass="scalar-or-unknown"
+  local klass="non-sve-or-unknown"
   if [[ "$sve_hits" -gt 0 ]]; then
     klass="SVE"
   elif [[ "$neon_hits" -gt 0 ]]; then
@@ -82,14 +82,14 @@ dump_one_lib() {
 }
 
 dump_one_lib "openblas_sve" "$SVE_LIB"
-dump_one_lib "openblas_scalar" "$SCALAR_LIB"
+dump_one_lib "openblas_simd" "$SIMD_LIB"
 
 {
   echo "GEMM ISA disassembly summary"
   echo "generated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
   echo
   cat "$OUT_DIR/openblas_sve_report.txt"
-  cat "$OUT_DIR/openblas_scalar_report.txt"
+  cat "$OUT_DIR/openblas_simd_report.txt"
 } > "$OUT_DIR/summary.txt"
 
 cat "$OUT_DIR/summary.txt"

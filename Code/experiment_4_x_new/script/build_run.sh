@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Experiment 4.x (new): GEMM latency comparison (OpenBLAS SVE vs OpenBLAS scalar)
+# Experiment 4.x (new): GEMM latency comparison (OpenBLAS SVE vs OpenBLAS SIMD baseline)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
@@ -21,30 +21,30 @@ OPENBLAS_SVE_PREFIX="$CODE_DIR/openblas/openblas_install"
 CFLAGS_OB_SVE="$CFLAGS_BASE -I$OPENBLAS_SVE_PREFIX/include"
 LDFLAGS_OB_SVE="$OPENBLAS_SVE_PREFIX/lib/libopenblas.a $LIBS_BASE"
 
-OPENBLAS_SCALAR_PREFIX="$CODE_DIR/openblas_scalar"
-OPENBLAS_SCALAR_LIB="$OPENBLAS_SCALAR_PREFIX/lib"
-OPENBLAS_SCALAR_A=""
-if [[ -d "$OPENBLAS_SCALAR_LIB" ]]; then
-  armv8_a="$(find "$OPENBLAS_SCALAR_LIB" -maxdepth 1 -name 'libopenblas_armv8p*.a' -print -quit)"
+OPENBLAS_SIMD_PREFIX="$CODE_DIR/openblas_simd"
+OPENBLAS_SIMD_LIB="$OPENBLAS_SIMD_PREFIX/lib"
+OPENBLAS_SIMD_A=""
+if [[ -d "$OPENBLAS_SIMD_LIB" ]]; then
+  armv8_a="$(find "$OPENBLAS_SIMD_LIB" -maxdepth 1 -name 'libopenblas_armv8p*.a' -print -quit)"
   if [[ -n "$armv8_a" && -f "$armv8_a" ]]; then
-    OPENBLAS_SCALAR_A="$armv8_a"
+    OPENBLAS_SIMD_A="$armv8_a"
   else
-    OPENBLAS_SCALAR_A="$(find "$OPENBLAS_SCALAR_LIB" -maxdepth 1 -name 'libopenblas*.a' -print -quit)"
+    OPENBLAS_SIMD_A="$(find "$OPENBLAS_SIMD_LIB" -maxdepth 1 -name 'libopenblas*.a' -print -quit)"
   fi
 fi
-if [[ -z "$OPENBLAS_SCALAR_A" ]]; then
-  OPENBLAS_SCALAR_A="$OPENBLAS_SCALAR_LIB/libopenblas.a"
+if [[ -z "$OPENBLAS_SIMD_A" ]]; then
+  OPENBLAS_SIMD_A="$OPENBLAS_SIMD_LIB/libopenblas.a"
 fi
-CFLAGS_OB_SCALAR="$CFLAGS_BASE -I$OPENBLAS_SCALAR_PREFIX/include"
-LDFLAGS_OB_SCALAR="$OPENBLAS_SCALAR_A $LIBS_BASE"
+CFLAGS_OB_SIMD="$CFLAGS_BASE -I$OPENBLAS_SIMD_PREFIX/include"
+LDFLAGS_OB_SIMD="$OPENBLAS_SIMD_A $LIBS_BASE"
 
 run_all() {
   local do_clean="${CLEAN_OUTPUT:-1}"
   if [[ "$do_clean" == "1" ]]; then
-    rm -rf "$SCRIPT_DIR/../output/openblas_sve" "$SCRIPT_DIR/../output/openblas_scalar" "$SCRIPT_DIR/../output/compare"
+    rm -rf "$SCRIPT_DIR/../output/openblas_sve" "$SCRIPT_DIR/../output/openblas_simd" "$SCRIPT_DIR/../output/compare"
   fi
   CLEAN_OUTPUT=0 "$0" benchmark-gemm-openblas-sve
-  CLEAN_OUTPUT=0 "$0" benchmark-gemm-openblas-scalar
+  CLEAN_OUTPUT=0 "$0" benchmark-gemm-openblas-simd
   "$SCRIPT_DIR/compare_gemm_latency.py"
 }
 
@@ -59,17 +59,17 @@ case "$TAG" in
     CFLAGS="$CFLAGS_OB_SVE -DLIB_TAG=\"openblas_sve\""
     LDFLAGS="$LDFLAGS_OB_SVE"
     ;;
-  benchmark-gemm-openblas-scalar)
+  benchmark-gemm-openblas-simd)
     SRC="$SCRIPT_DIR/../src/gemm_latency_benchmark.c"
-    CFLAGS="$CFLAGS_OB_SCALAR -DLIB_TAG=\"openblas_scalar\""
-    LDFLAGS="$LDFLAGS_OB_SCALAR"
+    CFLAGS="$CFLAGS_OB_SIMD -DLIB_TAG=\"openblas_simd\""
+    LDFLAGS="$LDFLAGS_OB_SIMD"
     ;;
   compare)
     exec "$SCRIPT_DIR/compare_gemm_latency.py"
     ;;
   *)
     echo "[X] Unknown TAG: $TAG"
-    echo "Available: all | benchmark-gemm-openblas-sve | benchmark-gemm-openblas-scalar | compare"
+    echo "Available: all | benchmark-gemm-openblas-sve | benchmark-gemm-openblas-simd | compare"
     exit 1
     ;;
 esac

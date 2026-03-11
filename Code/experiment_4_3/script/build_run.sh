@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Experiment 4.3: OpenBLAS SVE vs scalar performance comparison only.
+# Experiment 4.3: OpenBLAS SVE vs SIMD-baseline performance comparison only.
 # Cloned from 4.2; LAPACK/ArmPL leftovers removed.
 set -euo pipefail
 
@@ -14,12 +14,12 @@ TAG="${1:-}"
 run_all() {
   local do_clean="${CLEAN_OUTPUT:-1}"
   if [[ "$do_clean" == "1" ]]; then
-    rm -rf "$SCRIPT_DIR/../output/openblas_sve" "$SCRIPT_DIR/../output/openblas_scalar"
+    rm -rf "$SCRIPT_DIR/../output/openblas_sve" "$SCRIPT_DIR/../output/openblas_simd"
   fi
   CLEAN_OUTPUT=0 "$0" benchmark-syev-openblas-sve
   CLEAN_OUTPUT=0 "$0" benchmark-syevd-openblas-sve
-  CLEAN_OUTPUT=0 "$0" benchmark-syev-openblas-scalar
-  CLEAN_OUTPUT=0 "$0" benchmark-syevd-openblas-scalar
+  CLEAN_OUTPUT=0 "$0" benchmark-syev-openblas-simd
+  CLEAN_OUTPUT=0 "$0" benchmark-syevd-openblas-simd
 }
 
 if [[ -z "$TAG" || "$TAG" == "all" ]]; then
@@ -45,30 +45,30 @@ WRAP3D_SYMS=( dsytrd_ dstedc_ dormtr_ )
 WRAP3D_LDFLAGS=()
 for s in "${WRAP3D_SYMS[@]}"; do WRAP3D_LDFLAGS+=("-Wl,--wrap=${s}"); done
 
-# ====== 2. Library Presets (4.3: OpenBLAS SVE vs scalar only) ======
+# ====== 2. Library Presets (4.3: OpenBLAS SVE vs SIMD baseline only) ======
 # - openblas/openblas_install: SVE build — run Code/openblas/build_arm_threads_sve.sh (installs there)
-# - openblas_scalar: scalar build — run Code/openblas/build_arm_threads_scalar.sh → Code/openblas_scalar/
+# - openblas_simd: ARMV8 SIMD baseline — run Code/openblas/build_arm_threads_scalar.sh → Code/openblas_simd/
 
 # ===== OpenBLAS SVE (static; build_arm_threads_sve.sh → Code/openblas/openblas_install) =====
 OPENBLAS_SVE_PREFIX="$CODE_DIR/openblas/openblas_install"
 CFLAGS_OB_SVE="$CFLAGS_BASE -I$OPENBLAS_SVE_PREFIX/include"
 LDFLAGS_OB_SVE="$OPENBLAS_SVE_PREFIX/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 
-# ===== OpenBLAS scalar (static, Code/openblas_scalar; force ARMV8+ONLY_C build) =====
-OPENBLAS_SCALAR_PREFIX="$CODE_DIR/openblas_scalar"
-OPENBLAS_SCALAR_LIB="$OPENBLAS_SCALAR_PREFIX/lib"
+# ===== OpenBLAS SIMD baseline (static, Code/openblas_simd; force ARMV8+ONLY_C build) =====
+OPENBLAS_SIMD_PREFIX="$CODE_DIR/openblas_simd"
+OPENBLAS_SIMD_LIB="$OPENBLAS_SIMD_PREFIX/lib"
 # Prefer libopenblas_armv8p*.a (ARMV8 + ONLY_C=1 from build_arm_threads_scalar.sh)
-if [[ -d "$OPENBLAS_SCALAR_LIB" ]]; then
-  armv8_a="$(find "$OPENBLAS_SCALAR_LIB" -maxdepth 1 -name 'libopenblas_armv8p*.a' -print -quit)"
+if [[ -d "$OPENBLAS_SIMD_LIB" ]]; then
+  armv8_a="$(find "$OPENBLAS_SIMD_LIB" -maxdepth 1 -name 'libopenblas_armv8p*.a' -print -quit)"
   if [[ -n "$armv8_a" && -f "$armv8_a" ]]; then
-    OPENBLAS_SCALAR_A="$armv8_a"
+    OPENBLAS_SIMD_A="$armv8_a"
   else
-    OPENBLAS_SCALAR_A="$(find "$OPENBLAS_SCALAR_LIB" -maxdepth 1 -name 'libopenblas*.a' -print -quit)"
+    OPENBLAS_SIMD_A="$(find "$OPENBLAS_SIMD_LIB" -maxdepth 1 -name 'libopenblas*.a' -print -quit)"
   fi
 fi
-OPENBLAS_SCALAR_A="${OPENBLAS_SCALAR_A:-}"
-CFLAGS_OB_SCALAR="$CFLAGS_BASE -I$OPENBLAS_SCALAR_PREFIX/include"
-LDFLAGS_OB_SCALAR="${OPENBLAS_SCALAR_A:-$OPENBLAS_SCALAR_LIB/libopenblas.a} $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
+OPENBLAS_SIMD_A="${OPENBLAS_SIMD_A:-}"
+CFLAGS_OB_SIMD="$CFLAGS_BASE -I$OPENBLAS_SIMD_PREFIX/include"
+LDFLAGS_OB_SIMD="${OPENBLAS_SIMD_A:-$OPENBLAS_SIMD_LIB/libopenblas.a} $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 
 # ArmPL (STATIC THREAD=1)
 ARMPL_PREFIX="$CODE_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
@@ -107,19 +107,19 @@ case "$TAG" in
       OUT_ROUTINE="syevd"
       ;;
 
-  benchmark-syev-openblas-scalar)
+  benchmark-syev-openblas-simd)
       SRC="$SCRIPT_DIR/../src/syev_benchmark.c"
-      CFLAGS="$CFLAGS_OB_SCALAR -DLIB_TAG=\"openblas_scalar\" -DROUTINE_NAME=\"syev\""
-      LDFLAGS="$LDFLAGS_OB_SCALAR ${WRAP3_LDFLAGS[*]}"
-      OUT_LIB="openblas_scalar"
+      CFLAGS="$CFLAGS_OB_SIMD -DLIB_TAG=\"openblas_simd\" -DROUTINE_NAME=\"syev\""
+      LDFLAGS="$LDFLAGS_OB_SIMD ${WRAP3_LDFLAGS[*]}"
+      OUT_LIB="openblas_simd"
       OUT_ROUTINE="syev"
       ;;
 
-  benchmark-syevd-openblas-scalar)
+  benchmark-syevd-openblas-simd)
       SRC="$SCRIPT_DIR/../src/syevd_benchmark.c"
-      CFLAGS="$CFLAGS_OB_SCALAR -DLIB_TAG=\"openblas_scalar\" -DROUTINE_NAME=\"syevd\""
-      LDFLAGS="$LDFLAGS_OB_SCALAR ${WRAP3D_LDFLAGS[*]}"
-      OUT_LIB="openblas_scalar"
+      CFLAGS="$CFLAGS_OB_SIMD -DLIB_TAG=\"openblas_simd\" -DROUTINE_NAME=\"syevd\""
+      LDFLAGS="$LDFLAGS_OB_SIMD ${WRAP3D_LDFLAGS[*]}"
+      OUT_LIB="openblas_simd"
       OUT_ROUTINE="syevd"
       ;;
 

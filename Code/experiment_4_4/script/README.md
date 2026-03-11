@@ -3,7 +3,7 @@
 本实验在已有 4.2、4.3 数据基础上，**量化各方法/手段的加速程度**，说明 DSTEDC 为何比 DSTEQR 快。
 
 **4.2** = LAPACK vs OpenBLAS。  
-**4.3** = SVE vs 标量。  
+**4.3** = SVE vs SIMD baseline。  
 **4.4** = 各因素加速分解（算法、BLAS、SVE、归因），**复用 4.2/4.3 数据**，无需重跑 benchmark/perf。
 
 ---
@@ -51,7 +51,7 @@ python3 accelerate_decompose.py --root4_2 ../../experiment_4_2/output --root4_3 
 输出包括：
 1. 算法贡献：DSTEQR vs DSTEDC 加速比（~10–25×）
 2. BLAS 贡献：各阶段 LAPACK→OpenBLAS 加速比（DSTEQR≈1×，DSTEDC≈2–4×）
-3. SVE 贡献：scalar→SVE 各阶段加速比（DSTEQR≈1×，DSTEDC≈1.1–1.2×）
+3. SVE 贡献：SIMD baseline→SVE 各阶段加速比（DSTEQR≈1×，DSTEDC≈1.1–1.2×）
 4. 归因：Tri-eig 对 syev→syevd 总加速的贡献占比
 5. 综合小结表
 

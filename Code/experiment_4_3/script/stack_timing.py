@@ -18,7 +18,7 @@ def main():
     ap.add_argument("--routine", required=True, choices=["syev", "syevd"])
     ap.add_argument("--root", default="../output")
     ap.add_argument("--lib-a", default="openblas_sve", help="e.g. openblas_sve")
-    ap.add_argument("--lib-b", default="openblas_scalar", help="e.g. openblas_scalar")
+    ap.add_argument("--lib-b", default="openblas_simd", help="e.g. openblas_simd")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
@@ -75,7 +75,7 @@ def main():
                     other[stages[0]], other[stages[1]], other[stages[2]],
                 ])
 
-    # --- Terminal table: SVE vs scalar timing and speedup ---
+    # --- Terminal table: SVE vs SIMD-baseline timing and speedup ---
     print()
     print(f"  [{args.routine}] {args.lib_a} vs {args.lib_b}  timing (speedup = {args.lib_b}/{args.lib_a}, >1 = {args.lib_a} faster)")
     print("  " + "-" * 72)

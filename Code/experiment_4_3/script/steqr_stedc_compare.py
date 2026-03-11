@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare only DSTEQR (syev) and DSTEDC (syevd) timing: SVE vs scalar."""
+"""Compare only DSTEQR (syev) and DSTEDC (syevd) timing: SVE vs SIMD baseline."""
 import argparse
 import csv
 import os
@@ -11,10 +11,10 @@ def load_csv(path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Compare DSTEQR and DSTEDC only (SVE vs scalar)")
+    ap = argparse.ArgumentParser(description="Compare DSTEQR and DSTEDC only (SVE vs SIMD baseline)")
     ap.add_argument("--root", default="../output")
     ap.add_argument("--lib-a", default="openblas_sve")
-    ap.add_argument("--lib-b", default="openblas_scalar")
+    ap.add_argument("--lib-b", default="openblas_simd")
     args = ap.parse_args()
 
     root = os.path.abspath(args.root)
@@ -27,7 +27,7 @@ def main():
     b_syev_map = {(int(r["threads"]), int(r["N"])): r for r in b_syev}
 
     print()
-    print("  [syev] DSTEQR only — openblas_sve vs openblas_scalar")
+    print("  [syev] DSTEQR only — openblas_sve vs openblas_simd")
     print("  " + "-" * 60)
     print(f"  {'T':>3} {'N':>6}   {args.lib_a:>12}   {args.lib_b:>12}   speedup")
     print("  " + "-" * 60)
@@ -46,7 +46,7 @@ def main():
     print("  " + "-" * 60)
     if steqr_rows:
         avg = sum(x[4] for x in steqr_rows) / len(steqr_rows)
-        print(f"  Avg speedup (SVE vs scalar, DSTEQR only): {avg:.3f}x")
+        print(f"  Avg speedup (SVE vs SIMD baseline, DSTEQR only): {avg:.3f}x")
     print()
 
     # ---- DSTEDC (syevd) ----
@@ -54,7 +54,7 @@ def main():
     b_syevd = load_csv(os.path.join(root, args.lib_b, "syevd_benchmark.csv"))
     b_syevd_map = {(int(r["threads"]), int(r["N"])): r for r in b_syevd}
 
-    print("  [syevd] DSTEDC only — openblas_sve vs openblas_scalar")
+    print("  [syevd] DSTEDC only — openblas_sve vs openblas_simd")
     print("  " + "-" * 60)
     print(f"  {'T':>3} {'N':>6}   {args.lib_a:>12}   {args.lib_b:>12}   speedup")
     print("  " + "-" * 60)
@@ -73,11 +73,11 @@ def main():
     print("  " + "-" * 60)
     if stedc_rows:
         avg = sum(x[4] for x in stedc_rows) / len(stedc_rows)
-        print(f"  Avg speedup (SVE vs scalar, DSTEDC only): {avg:.3f}x")
+        print(f"  Avg speedup (SVE vs SIMD baseline, DSTEDC only): {avg:.3f}x")
     print()
 
     # ---- CSV: DSTEQR ----
-    steqr_csv = os.path.join(out_dir, "time_dsteqr_only_openblas_sve_openblas_scalar.csv")
+    steqr_csv = os.path.join(out_dir, "time_dsteqr_only_openblas_sve_openblas_simd.csv")
     with open(steqr_csv, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["routine", "threads", "N", "lib_a_s", "lib_b_s", "speedup"])
@@ -86,7 +86,7 @@ def main():
     print(f"  CSV (DSTEQR): {steqr_csv}")
 
     # ---- CSV: DSTEDC ----
-    stedc_csv = os.path.join(out_dir, "time_dstedc_only_openblas_sve_openblas_scalar.csv")
+    stedc_csv = os.path.join(out_dir, "time_dstedc_only_openblas_sve_openblas_simd.csv")
     with open(stedc_csv, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["routine", "threads", "N", "lib_a_s", "lib_b_s", "speedup"])

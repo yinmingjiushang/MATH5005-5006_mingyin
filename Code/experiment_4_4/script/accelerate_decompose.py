@@ -2,11 +2,11 @@
 """
 实验 4.4：各因素加速贡献分解
 
-基于 4.2（LAPACK vs OpenBLAS）和 4.3（SVE vs scalar）的数据，
+基于 4.2（LAPACK vs OpenBLAS）和 4.3（SVE vs SIMD baseline）的数据，
 量化以下因素的加速程度：
   1. 算法 (STEQR vs STEDC)
   2. BLAS 优化 (Reference BLAS → OpenBLAS)
-  3. SVE (scalar → SVE)
+  3. SVE (SIMD baseline → SVE)
   4. 归因：Tri-eig 对总加速的贡献占比
 
 用法:
@@ -18,7 +18,7 @@ import os
 
 
 def load_stacked_csv(path):
-    """Load stacked CSV (lapack/openblas or sve/scalar), return dict (t,n,lib) -> row"""
+    """Load stacked CSV (lapack/openblas or sve/simd), return dict (t,n,lib) -> row"""
     rows = []
     with open(path, "r", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -47,9 +47,9 @@ def main():
     # 4.2: LAPACK vs OpenBLAS
     syev_42 = os.path.join(compare_42, "time_syev_stacked_lapack_openblas.csv")
     syevd_42 = os.path.join(compare_42, "time_syevd_stacked_lapack_openblas.csv")
-    # 4.3: SVE vs scalar
-    syev_43 = os.path.join(compare_43, "time_syev_stacked_openblas_sve_openblas_scalar.csv")
-    syevd_43 = os.path.join(compare_43, "time_syevd_stacked_openblas_sve_openblas_scalar.csv")
+    # 4.3: SVE vs SIMD baseline
+    syev_43 = os.path.join(compare_43, "time_syev_stacked_openblas_sve_openblas_simd.csv")
+    syevd_43 = os.path.join(compare_43, "time_syevd_stacked_openblas_sve_openblas_simd.csv")
 
     for p in [syev_42, syevd_42, syev_43, syevd_43]:
         if not os.path.isfile(p):
@@ -141,22 +141,22 @@ def main():
     print("  注：syev Tri-eig ≈ 1× (DSTEQR 无 DGEMM)，syevd Tri-eig ≈ 2–4× (DSTEDC 有 DGEMM)")
     print()
 
-    # ---- 3. SVE 贡献 (scalar → SVE)，分阶段 ----
+    # ---- 3. SVE 贡献 (SIMD baseline → SVE)，分阶段 ----
     print()
-    print("  3. SVE 贡献：scalar → SVE（各阶段加速比）")
+    print("  3. SVE 贡献：SIMD baseline → SVE（各阶段加速比）")
     print("  " + "-" * 70)
     print(f"  {'N':>6}   {'syev DSYTRD':>10}   {'syev DSTEQR':>10}   {'syevd DSYTRD':>10}   {'syevd DSTEDC':>10}")
     print("  " + "-" * 70)
 
     sve_rows = []
     for n in ns:
-        sc_ds = get_43("syev", "openblas_scalar", 1, n, "dsytrd_s")
+        sc_ds = get_43("syev", "openblas_simd", 1, n, "dsytrd_s")
         sv_ds = get_43("syev", "openblas_sve", 1, n, "dsytrd_s")
-        sc_se = get_43("syev", "openblas_scalar", 1, n, "dsteqr_s")
+        sc_se = get_43("syev", "openblas_simd", 1, n, "dsteqr_s")
         sv_se = get_43("syev", "openblas_sve", 1, n, "dsteqr_s")
-        sc_dsd = get_43("syevd", "openblas_scalar", 1, n, "dsytrd_s")
+        sc_dsd = get_43("syevd", "openblas_simd", 1, n, "dsytrd_s")
         sv_dsd = get_43("syevd", "openblas_sve", 1, n, "dsytrd_s")
-        sc_st = get_43("syevd", "openblas_scalar", 1, n, "dstedc_s")
+        sc_st = get_43("syevd", "openblas_simd", 1, n, "dstedc_s")
         sv_st = get_43("syevd", "openblas_sve", 1, n, "dstedc_s")
 
         def sp(a, b):
@@ -206,8 +206,8 @@ def main():
     print("  | 算法(STEQR→STEDC)| Tri-eig       | ~10–25×       | DSTEDC 用 DGEMM，STEQR 无")
     print("  | BLAS(ref→OpenBLAS)| DSTEDC       | ~2–4×         | OpenBLAS 的 DGEMM 优于 ref BLAS")
     print("  | BLAS(ref→OpenBLAS)| DSTEQR       | ~1×           | DSTEQR 无 DGEMM，换 BLAS 无益")
-    print("  | SVE(scalar→SVE) | DSTEDC        | ~1.1–1.2×     | SVE 对 DGEMM 有 modest 增益")
-    print("  | SVE(scalar→SVE) | DSTEQR        | ~1×           | DSTEQR 无向量化机会")
+    print("  | SVE(SIMD→SVE)   | DSTEDC        | ~1.1–1.2×     | SVE 对 DGEMM 有 modest 增益")
+    print("  | SVE(SIMD→SVE)   | DSTEQR        | ~1×           | DSTEQR 无向量化机会")
     print("  " + "-" * 70)
     print()
 

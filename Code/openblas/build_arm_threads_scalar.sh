@@ -7,11 +7,11 @@
 #   bash install_openblas_arm.sh
 #
 # Optional env:
-#   PREFIX=/opt/openblas        # install prefix (default: /home/ec2-user/MATH5005-5006_mingyin/Code/openblas_scalar)
+#   PREFIX=/opt/openblas        # install prefix (default: /home/ec2-user/MATH5005-5006_mingyin/Code/openblas_simd)
 #   USE_OPENMP=0                # 0=pthreads backend, 1=OpenMP backend
 #   STATIC_ONLY=0               # 1=build static only (.a)
 #   DYNAMIC_ARCH=0              # 1=build fat binary (multi-arch); slower build & larger .so
-#   TARGET=ARMV8                # scalar build: use ARMV8 + ONLY_C=1 (no NEON/SIMD)
+#   TARGET=ARMV8                # generic ARMV8 baseline build (non-SVE)
 #   WITH_DEBUG=1                # 1=keep symbols & frame pointers (perf/FlameGraph friendly)
 #   NUM_THREADS=4               # compile-time max threads (cap)
 #   CLEAN_LEVEL=0               # 0=make clean, 1=make distclean, 2=git clean -xdf (deep)
@@ -24,14 +24,14 @@ set -euo pipefail
 
 # ========= Config =========
 SRC_DIR="${SRC_DIR:-OpenBLAS-src}"                 # Git source dir
-PREFIX="${PREFIX:-/home/ec2-user/MATH5005-5006_mingyin/Code/openblas_scalar}" # Install prefix
+PREFIX="${PREFIX:-/home/ec2-user/MATH5005-5006_mingyin/Code/openblas_simd}" # Install prefix
 INSTALL_LIB_DIR="$PREFIX/lib"
 INSTALL_INC_DIR="$PREFIX/include"
 
 : "${USE_OPENMP:=0}"                               # 0=pthreads, 1=OpenMP
 : "${STATIC_ONLY:=0}"                              # 1=build static only
 : "${DYNAMIC_ARCH:=0}"                             # 1=multiple-arch fat binary
-: "${TARGET:=ARMV8}"                               # scalar: ARMV8 + ONLY_C=1, no NEON
+: "${TARGET:=ARMV8}"                               # generic ARMV8 baseline (non-SVE)
 : "${WITH_DEBUG:=1}"                               # 1=keep symbols for perf
 : "${NUM_THREADS:=4}"                              # compile-time thread cap
 : "${CLEAN_LEVEL:=0}"                              # 0 clean, 1 distclean, 2 git clean -xdf
@@ -45,7 +45,7 @@ echo "==> PREFIX         : $PREFIX"
 echo "==> USE_OPENMP     : $USE_OPENMP"
 echo "==> STATIC_ONLY    : $STATIC_ONLY"
 echo "==> DYNAMIC_ARCH   : $DYNAMIC_ARCH"
-echo "==> TARGET(opt)    : $TARGET (scalar: ARMV8 + ONLY_C=1)"
+echo "==> TARGET(opt)    : $TARGET (generic ARMV8 baseline)"
 echo "==> NUM_THREADS    : $NUM_THREADS (compile-time cap)"
 echo "==> WITH_DEBUG     : $WITH_DEBUG  (adds -g -fno-omit-frame-pointer; disable strip)"
 echo "==> CLEAN_LEVEL    : $CLEAN_LEVEL (0=clean, 1=distclean, 2=git clean -xdf)"
@@ -131,7 +131,7 @@ fi
 : "${CC:=gcc}"; : "${FC:=gfortran}"; : "${AR:=ar}"; : "${RANLIB:=ranlib}"
 export CC FC AR RANLIB
 
-# Scalar build: ONLY_C=1 = C kernels only (no ARM/NEON assembly); -fno-tree-vectorize = no auto-vectorization
+# Generic ARMV8 baseline build: ONLY_C=1 keeps the build away from the SVE-targeted path.
 MAKE_OPTS=( "NO_AFFINITY=1" "NO_TEST=1" "TARGET=$TARGET" "NUM_THREADS=$NUM_THREADS" "ONLY_C=1" )
 MAKE_OPTS+=( 'CFLAGS+=-fno-tree-vectorize' )
 MAKE_OPTS+=( 'FCFLAGS+=-fno-tree-vectorize' )
