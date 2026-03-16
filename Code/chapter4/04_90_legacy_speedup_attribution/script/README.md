@@ -44,7 +44,7 @@
 ## Quick start
 
 ```bash
-cd Code/chapter4/04_05_speedup_attribution/script
+cd Code/chapter4/04_90_legacy_speedup_attribution/script
 
 # 主实验：各因素加速贡献分解（复用 4.2、4.3 实验数据）
 python3 accelerate_decompose.py --root4_2 ../../04_03_blas_optimization/output --root4_3 ../../04_04_sve_vectorization/output

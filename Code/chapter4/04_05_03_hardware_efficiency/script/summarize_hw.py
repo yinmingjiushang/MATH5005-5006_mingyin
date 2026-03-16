@@ -210,7 +210,7 @@ def summarize_mem(input_dir: pathlib.Path, output_path: pathlib.Path, sizes=None
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Summarize raw perf/time logs for experiment 4.6.3.")
+    parser = argparse.ArgumentParser(description="Summarize raw perf/time logs for experiment 4.5.3.")
     parser.add_argument("mode", choices=["perf", "mem"])
     parser.add_argument("--input-dir", required=True)
     parser.add_argument("--output", required=True)

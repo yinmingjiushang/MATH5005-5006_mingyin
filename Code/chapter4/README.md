@@ -15,11 +15,11 @@ canonical structure.
 | 4.2 Overall benchmark | `Code/chapter4/04_02_benchmark` | integrated locally |
 | 4.3 BLAS optimization | `Code/chapter4/04_03_blas_optimization` | integrated locally |
 | 4.4 SVE vectorization | `Code/chapter4/04_04_sve_vectorization` | integrated locally |
-| 4.5 Speedup attribution | `Code/chapter4/04_05_speedup_attribution` | integrated locally |
-| 4.6.1 DSTEQR profile | `Code/chapter4/04_06_01_dsteqr_profile` | reuses `04_02_benchmark/dsyev_backend` |
-| 4.6.2 DSTEDC profile | `Code/chapter4/04_06_02_dstedc_profile` | reuses `04_02_benchmark/dsyevd_backend` |
-| 4.6.3 Hardware efficiency | `Code/chapter4/04_06_03_hardware_efficiency` | integrated locally |
-| 4.6.4 Synthesis | `Code/chapter4/04_06_04_synthesis` | documentation only |
+| 4.5.1 DSTEQR profile | `Code/chapter4/04_05_01_dsteqr_profile` | reuses `04_02_benchmark/dsyev_backend` |
+| 4.5.2 DSTEDC profile | `Code/chapter4/04_05_02_dstedc_profile` | reuses `04_02_benchmark/dsyevd_backend` |
+| 4.5.3 Hardware efficiency | `Code/chapter4/04_05_03_hardware_efficiency` | integrated locally |
+| 4.6 Final synthesis and summary | `Code/chapter4/04_06_summary` | documentation only |
+| legacy attribution analysis | `Code/chapter4/04_90_legacy_speedup_attribution` | integrated locally |
 
 ## Notes
 
@@ -28,7 +28,11 @@ canonical structure.
 - The old `Code/DSYEV` and `Code/DSYEVD` names are compatibility symlinks to
   `Code/chapter4/04_02_benchmark/dsyev_backend` and
   `Code/chapter4/04_02_benchmark/dsyevd_backend`.
-- Output files for Sections 4.3, 4.4, 4.5, and 4.6.3 now live directly under
-  the corresponding `Code/chapter4/<section>/output/` directories.
+- Output files for Sections 4.3, 4.4, and 4.5.3 now live directly under the
+  corresponding `Code/chapter4/<section>/output/` directories.
+- `Code/chapter4/04_90_legacy_speedup_attribution` is kept as a retained
+  intermediate analysis from an earlier Chapter 4 outline. It is no longer a
+  current thesis section, but its scripts and compact result snapshot remain
+  useful for reference.
 - Section 4.1 is setup/documentation only, so it does not have its own runnable
   directory here.

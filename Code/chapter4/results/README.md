@@ -15,8 +15,9 @@ Included files:
 - `04_04_sve_vectorization/`
   - Stacked timing tables comparing the 128-bit OpenBLAS SIMD baseline with
     the OpenBLAS SVE build.
-- `04_05_speedup_attribution/`
-  - The compact attribution summary CSV derived from the controlled results.
+- `04_90_legacy_speedup_attribution/`
+  - The compact attribution summary CSV retained from the earlier controlled
+    attribution pass.
 
 These snapshots are generated from the current Chapter 4 experiment scripts
 under `Code/chapter4/`. The full reproducible pipelines remain in the chapter

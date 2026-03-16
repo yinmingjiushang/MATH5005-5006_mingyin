@@ -3,7 +3,7 @@
 This backend is the shared `DSYEV` implementation used by:
 
 - `Code/chapter4/04_02_benchmark`
-- `Code/chapter4/04_06_01_dsteqr_profile`
+- `Code/chapter4/04_05_01_dsteqr_profile`
 
 Legacy path compatibility is preserved through the symlink:
 

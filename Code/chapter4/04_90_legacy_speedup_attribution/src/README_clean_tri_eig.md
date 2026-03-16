@@ -40,7 +40,7 @@
 ### 仅 STEQR（可单独编译、运行）
 
 ```bash
-cd Code/chapter4/04_05_speedup_attribution/src
+cd Code/chapter4/04_90_legacy_speedup_attribution/src
 gcc -DSTEQR_CLEAN_MAIN -o steqr_clean_main steqr_clean.c -lm
 ./steqr_clean_main
 ```

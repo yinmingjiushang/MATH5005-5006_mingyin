@@ -1,4 +1,4 @@
-# Experiment 4.6.3 - Hardware-Efficiency Evidence
+# Experiment 4.5.3 - Hardware-Efficiency Evidence
 
 This experiment collects direct hardware-oriented evidence for the claim that
 `DSTEQR` is relatively memory-bound while `DSTEDC` is more hardware-friendly on
@@ -11,7 +11,7 @@ The experiment is intentionally narrower than the earlier timing chapters:
 - fixed matrix family: SPD KMS matrices with `rho = 0.95`
 - fixed sizes: `512, 1024, 2048, 4096`
 
-This narrow scope is deliberate. The goal of Section 4.6.3 is explanatory:
+This narrow scope is deliberate. The goal of Section 4.5.3 is explanatory:
 to measure hardware-level work and memory behavior under a controlled setup,
 not to reproduce the full benchmark section.
 
@@ -52,7 +52,7 @@ runs to keep `perf stat` overhead manageable.
 ## Quick Start
 
 ```bash
-cd Code/chapter4/04_06_03_hardware_efficiency/script
+cd Code/chapter4/04_05_03_hardware_efficiency/script
 ./build_run.sh all
 ./run_perf_stat.sh all
 ./run_mem.sh end2end
@@ -66,12 +66,12 @@ SIZE_LIST="512 1024" ./run_perf_stat.sh tri
 
 Outputs are written under:
 
-- `Code/chapter4/04_06_03_hardware_efficiency/output/bin`
-- `Code/chapter4/04_06_03_hardware_efficiency/output/perf`
-- `Code/chapter4/04_06_03_hardware_efficiency/output/perf_deep`
-- `Code/chapter4/04_06_03_hardware_efficiency/output/mem`
+- `Code/chapter4/04_05_03_hardware_efficiency/output/bin`
+- `Code/chapter4/04_05_03_hardware_efficiency/output/perf`
+- `Code/chapter4/04_05_03_hardware_efficiency/output/perf_deep`
+- `Code/chapter4/04_05_03_hardware_efficiency/output/mem`
 
-## Expected use in Section 4.6.3
+## Expected use in Section 4.5.3
 
 Recommended tables/figures:
 
