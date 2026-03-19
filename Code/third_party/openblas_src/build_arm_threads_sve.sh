@@ -7,7 +7,7 @@
 #   bash install_openblas_arm.sh
 #
 # Optional env:
-#   PREFIX=/opt/openblas        # install prefix (default: $PWD/openblas_install)
+#   PREFIX=/opt/openblas        # install prefix (default: Code/third_party/openblas_sve)
 #   USE_OPENMP=0                # 0=pthreads backend, 1=OpenMP backend
 #   STATIC_ONLY=0               # 1=build static only (.a)
 #   DYNAMIC_ARCH=0              # 1=build fat binary (multi-arch); slower build & larger .so
@@ -17,13 +17,17 @@
 #   CLEAN_LEVEL=0               # 0=make clean, 1=make distclean, 2=git clean -xdf (deep)
 #   RECLONE=0                   # 1=rm -rf SRC_DIR and fresh clone
 #   SKIP_BUILD=0                # 1=only clean, skip build (useful for purge)
-#   SRC_DIR=OpenBLAS-src        # git clone target directory
+#   SKIP_DEPS=0                 # 1=skip deps install (no sudo)
+#   SRC_DIR=OpenBLAS-src        # git clone target directory under Code/third_party/openblas_src/
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+THIRD_PARTY_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
 # ========= Config =========
-SRC_DIR="${SRC_DIR:-OpenBLAS-src}"                 # Git source dir
-PREFIX="${PREFIX:-$PWD/openblas_install}"          # Install prefix
+SRC_DIR="${SRC_DIR:-$SCRIPT_DIR/OpenBLAS-src}"     # Git source dir
+PREFIX="${PREFIX:-$THIRD_PARTY_DIR/openblas_sve}"  # Install prefix
 INSTALL_LIB_DIR="$PREFIX/lib"
 INSTALL_INC_DIR="$PREFIX/include"
 
@@ -36,6 +40,7 @@ INSTALL_INC_DIR="$PREFIX/include"
 : "${CLEAN_LEVEL:=0}"                              # 0 clean, 1 distclean, 2 git clean -xdf
 : "${RECLONE:=0}"                                  # 1 fresh clone
 : "${SKIP_BUILD:=0}"                               # 1 only clean, skip build
+: "${SKIP_DEPS:=0}"                                # 1 skip deps install
 
 if command -v nproc >/dev/null 2>&1; then JOBS="$(nproc)"; else JOBS=4; fi
 
@@ -49,6 +54,7 @@ echo "==> WITH_DEBUG     : $WITH_DEBUG  (adds -g -fno-omit-frame-pointer; disabl
 echo "==> CLEAN_LEVEL    : $CLEAN_LEVEL (0=clean, 1=distclean, 2=git clean -xdf)"
 echo "==> RECLONE        : $RECLONE"
 echo "==> SKIP_BUILD     : $SKIP_BUILD"
+echo "==> SKIP_DEPS      : $SKIP_DEPS"
 echo "==> JOBS           : $JOBS"
 echo
 
@@ -69,7 +75,11 @@ install_deps() {
     exit 1
   fi
 }
-install_deps
+if [[ "$SKIP_DEPS" == "1" ]]; then
+  echo "==> SKIP_DEPS=1: skipping dependency install"
+else
+  install_deps
+fi
 
 # ========= CPU info & target detect =========
 print_cpu_info() {
@@ -160,7 +170,7 @@ echo "==> Build options : ${MAKE_OPTS[*]}"
 make -j"$JOBS" "${MAKE_OPTS[@]}"
 
 echo "==> Installing to $PREFIX"
-make PREFIX="$PREFIX" install
+make PREFIX="$PREFIX" "${MAKE_OPTS[@]}" install
 
 # ========= Post-build checks =========
 STATIC_LIB="$INSTALL_LIB_DIR/libopenblas.a"

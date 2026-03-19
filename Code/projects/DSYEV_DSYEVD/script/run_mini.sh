@@ -3,13 +3,28 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
+find_code_dir() {
+  local dir="$SCRIPT_DIR"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/third_party" && -d "$dir/chapter4" ]]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+CODE_DIR="$(find_code_dir)" || { echo "Failed to locate Code root from $SCRIPT_DIR" >&2; exit 1; }
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
+
 # Local OpenBLAS installation (can be overridden externally)
-OPENBLAS_PREFIX="${OPENBLAS_PREFIX:-../../openblas/openblas_install}"
+OPENBLAS_PREFIX="${OPENBLAS_PREFIX:-$THIRD_PARTY_DIR/openblas_sve}"
 OPENBLAS_LIBDIR="$OPENBLAS_PREFIX/lib"
 OPENBLAS_INCDIR="$OPENBLAS_PREFIX/include"
 
 # Source file (can be passed as the first argument)
-SRC="${1:-../src/dsyevd.c}"
+SRC="${1:-$SCRIPT_DIR/../src/dsyevd.c}"
 BIN="${SRC%.*}"
 
 # Enforce single-thread execution (no OpenMP)

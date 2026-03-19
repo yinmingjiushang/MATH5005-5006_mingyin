@@ -23,7 +23,7 @@
 ## 运行
 
 ```bash
-cd Code/experiment_4_x_new/script
+cd Code/projects/experiment_4_x_new/script
 ./build_run.sh all
 ```
 

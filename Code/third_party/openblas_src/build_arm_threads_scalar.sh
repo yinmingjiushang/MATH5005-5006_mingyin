@@ -7,7 +7,7 @@
 #   bash install_openblas_arm.sh
 #
 # Optional env:
-#   PREFIX=/opt/openblas        # install prefix (default: /home/ec2-user/MATH5005-5006_mingyin/Code/openblas_simd)
+#   PREFIX=/opt/openblas        # install prefix (default: Code/third_party/openblas_simd)
 #   USE_OPENMP=0                # 0=pthreads backend, 1=OpenMP backend
 #   STATIC_ONLY=0               # 1=build static only (.a)
 #   DYNAMIC_ARCH=0              # 1=build fat binary (multi-arch); slower build & larger .so
@@ -18,13 +18,16 @@
 #   RECLONE=0                   # 1=rm -rf SRC_DIR and fresh clone
 #   SKIP_BUILD=0                # 1=only clean, skip build (useful for purge)
 #   SKIP_DEPS=0                 # 1=skip deps install (no sudo)
-#   SRC_DIR=OpenBLAS-src        # git clone target directory
+#   SRC_DIR=OpenBLAS-src        # git clone target directory under Code/third_party/openblas_src/
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+CODE_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
 # ========= Config =========
-SRC_DIR="${SRC_DIR:-OpenBLAS-src}"                 # Git source dir
-PREFIX="${PREFIX:-/home/ec2-user/MATH5005-5006_mingyin/Code/openblas_simd}" # Install prefix
+SRC_DIR="${SRC_DIR:-$SCRIPT_DIR/OpenBLAS-src}"     # Git source dir
+PREFIX="${PREFIX:-$CODE_DIR/openblas_simd}"        # Install prefix
 INSTALL_LIB_DIR="$PREFIX/lib"
 INSTALL_INC_DIR="$PREFIX/include"
 
@@ -151,7 +154,7 @@ echo "==> Build options : ${MAKE_OPTS[*]}"
 make -j"$JOBS" "${MAKE_OPTS[@]}"
 
 echo "==> Installing to $PREFIX"
-make PREFIX="$PREFIX" install
+make PREFIX="$PREFIX" "${MAKE_OPTS[@]}" install
 
 # ========= Post-build checks =========
 STATIC_LIB="$INSTALL_LIB_DIR/libopenblas.a"

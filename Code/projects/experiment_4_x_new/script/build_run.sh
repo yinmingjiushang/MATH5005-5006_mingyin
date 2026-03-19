@@ -3,7 +3,19 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
-CODE_DIR="$(cd -- "$SCRIPT_DIR/../.." >/dev/null 2>&1 && pwd -P)"
+find_code_dir() {
+  local dir="$SCRIPT_DIR"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/third_party" && -d "$dir/chapter4" ]]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+CODE_DIR="$(find_code_dir)" || { echo "Failed to locate Code root from $SCRIPT_DIR" >&2; exit 1; }
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
 
 TAG="${1:-all}"
 
@@ -17,11 +29,11 @@ CC="${CC:-gcc}"
 CFLAGS_BASE="-O3 -std=c11 -D_POSIX_C_SOURCE=200112L -mcpu=native -mtune=native -fno-math-errno -fno-trapping-math -ffp-contract=fast"
 LIBS_BASE="-lgfortran -lm -lpthread -ldl"
 
-OPENBLAS_SVE_PREFIX="$CODE_DIR/openblas/openblas_install"
+OPENBLAS_SVE_PREFIX="$THIRD_PARTY_DIR/openblas_sve"
 CFLAGS_OB_SVE="$CFLAGS_BASE -I$OPENBLAS_SVE_PREFIX/include"
 LDFLAGS_OB_SVE="$OPENBLAS_SVE_PREFIX/lib/libopenblas.a $LIBS_BASE"
 
-OPENBLAS_SIMD_PREFIX="$CODE_DIR/openblas_simd"
+OPENBLAS_SIMD_PREFIX="$THIRD_PARTY_DIR/openblas_simd"
 OPENBLAS_SIMD_LIB="$OPENBLAS_SIMD_PREFIX/lib"
 OPENBLAS_SIMD_A=""
 if [[ -d "$OPENBLAS_SIMD_LIB" ]]; then

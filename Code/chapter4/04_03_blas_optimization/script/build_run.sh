@@ -4,6 +4,7 @@ set -euo pipefail
 # Resolve paths relative to this script (works from any CWD)
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 CODE_DIR="$(cd -- "$SCRIPT_DIR/../../.." >/dev/null 2>&1 && pwd -P)"
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
 
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
@@ -49,28 +50,28 @@ for s in "${WRAP3D_SYMS[@]}"; do WRAP3D_LDFLAGS+=("-Wl,--wrap=${s}"); done
 # ====== 2. Library Presets ======
 # Netlib (dynamic)
 # ===== Netlib (static) =====
-LAPACK_PREFIX="$CODE_DIR/LAPACK/install"
+LAPACK_PREFIX="$THIRD_PARTY_DIR/LAPACK/install"
 CFLAGS_NETLIB="$CFLAGS_BASE -I$LAPACK_PREFIX/include"
 LDFLAGS_NETLIB="$LAPACK_PREFIX/lib64/liblapack.a $LAPACK_PREFIX/lib64/libblas.a $LIBS_FORTRAN $LIBS_MATH"
 
 # ===== OpenBLAS (static) =====
-OPENBLAS_PREFIX="$CODE_DIR/openblas/openblas_install"
+OPENBLAS_PREFIX="$THIRD_PARTY_DIR/openblas_sve"
 CFLAGS_OB="$CFLAGS_BASE -I$OPENBLAS_PREFIX/include"
 LDFLAGS_OB="$OPENBLAS_PREFIX/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 
 # ArmPL (STATIC THREAD=1)
-ARMPL_PREFIX="$CODE_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
+ARMPL_PREFIX="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
 CFLAGS_AP="$CFLAGS_BASE -I$ARMPL_PREFIX/include"
 LDFLAGS_AP="$ARMPL_PREFIX/lib/libarmpl.a -lpthread -ldl $LIBS_FORTRAN $LIBS_MATH"
 
 # ArmPL (STATIC THREAD=2)
-#ARMPL_PREFIX="../../armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
+#ARMPL_PREFIX="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
 #CFLAGS_AP="$CFLAGS_BASE -I$ARMPL_PREFIX/include"
 #LDFLAGS_AP="$ARMPL_PREFIX/lib/libarmpl_mp.a -fopenmp -lgomp -lpthread -ldl $LIBS_FORTRAN $LIBS_MATH"
 
 # ArmPL dynamic (add a new preset)
-#export LD_LIBRARY_PATH="$CODE_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc/lib:$LD_LIBRARY_PATH"
-#ARMPL_PREFIX="$CODE_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
+#export LD_LIBRARY_PATH="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc/lib:$LD_LIBRARY_PATH"
+#ARMPL_PREFIX="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
 #CFLAGS_AP_DYN="$CFLAGS_BASE -I$ARMPL_PREFIX/include"
 #LDFLAGS_AP_DYN="-L$ARMPL_PREFIX/lib -larmpl -lpthread -ldl $LIBS_FORTRAN $LIBS_MATH"
 

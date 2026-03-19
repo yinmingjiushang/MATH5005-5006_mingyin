@@ -1,34 +1,36 @@
 ## Generated experiment outputs
 **/output/
-
-## Built LAPACK artifacts
-Code/LAPACK/build/
-Code/LAPACK/LAPACK_src/
-Code/LAPACK/install/
-
-## Built OpenBLAS artifacts
-Code/openblas/OpenBLAS-src/
-Code/openblas/openblas_install/
-Code/armpl/arm-performance-libraries_25.07_rpm_gcc.tar
-Code/armpl/arm-performance-libraries_25.07_rpm/
-.idea/
-Code/DSYEV_DSYEVD/script/tools/
-Code/DSYEV_DSYEVD/src/openblas_info
-
-## Experiment 4.x: deprecated / build artifacts
-Code/experiment_4_x_useless/
-Code/openblas_scalar/
-Code/openblas_simd/
 **/__pycache__/
+
+## Third-party library sources and build/install trees
+Code/third_party/LAPACK/build/
+Code/third_party/LAPACK/LAPACK_src/
+Code/third_party/LAPACK/install/
+Code/third_party/openblas_src/OpenBLAS-src/
+Code/third_party/openblas_src/install/
+Code/third_party/openblas_sve/
+Code/third_party/openblas_simd/
+Code/third_party/armpl/arm-performance-libraries_25.07_rpm_gcc.tar
+Code/third_party/armpl/arm-performance-libraries_25.07_rpm/
+
+## Safety net for accidental root-level third-party builds
+/OpenBLAS-src/
+/openblas_install/
+
+## Local helper/build artifacts
+Code/projects/DSYEV_DSYEVD/script/tools/
+Code/projects/DSYEV_DSYEVD/src/openblas_info
+
+## Deprecated local-only code
+Code/legacy/experiment_4_x_useless/
+
+## Editor settings and convenience scripts
+.idea/
+.vscode/
+update_latex.sh
 
 ## LaTeX submodule
 # Note: latex/ is a git submodule, so its compilation artifacts are managed by its own .gitignore
-
-## Local convenience scripts
-update_latex.sh
-
-## Editor configurations (personal preference)
-.vscode/
 
 ## Local Chapter 2.2 scratch files
 Thesis/chapter2/section2_2/*.md

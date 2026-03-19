@@ -5,12 +5,16 @@
 #   bash install_openblas_arm.sh
 # Optional env:
 #   PREFIX=/opt/openblas USE_OPENMP=0 STATIC_ONLY=0 DYNAMIC_ARCH=0 TARGET=auto WITH_DEBUG=1
+# Default paths are anchored to this script's directory under Code/third_party/openblas_src/.
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+THIRD_PARTY_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
 # ========= Config =========
-SRC_DIR="${SRC_DIR:-OpenBLAS-src}"                 # Git source dir
-PREFIX="${PREFIX:-$PWD/openblas_install}"          # Install prefix
+SRC_DIR="${SRC_DIR:-$SCRIPT_DIR/OpenBLAS-src}"     # Git source dir
+PREFIX="${PREFIX:-$THIRD_PARTY_DIR/openblas_sve}"  # Install prefix
 INSTALL_LIB_DIR="$PREFIX/lib"
 INSTALL_INC_DIR="$PREFIX/include"
 

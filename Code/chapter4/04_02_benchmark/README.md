@@ -12,5 +12,5 @@ This is the canonical entry point for Chapter 4 Section 4.2.
 
 Use `run_all.sh` to rebuild and run both benchmark drivers.
 
-The legacy `Code/DSYEV` and `Code/DSYEVD` paths are compatibility symlinks to
-these local backends.
+Use these local backend paths directly. The old top-level `Code/DSYEV` and
+`Code/DSYEVD` shortcuts are no longer kept.

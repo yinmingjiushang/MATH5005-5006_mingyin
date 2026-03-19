@@ -4,9 +4,8 @@
 Each subdirectory is named after the thesis section it supports and now holds
 the runnable implementation for that section.
 
-The older `Code/experiment_4_*` paths are kept as compatibility symlinks to the
-new section-oriented directories. They should no longer be treated as the
-canonical structure.
+The section-oriented `Code/chapter4/` layout is the canonical structure.
+Older top-level `Code/experiment_4_*` shortcuts have been removed.
 
 ## Section Map
 
@@ -23,11 +22,8 @@ canonical structure.
 
 ## Notes
 
-- The old `Code/experiment_4_*` names now resolve to the corresponding
-  `Code/chapter4/*` directories.
-- The old `Code/DSYEV` and `Code/DSYEVD` names are compatibility symlinks to
-  `Code/chapter4/04_02_benchmark/dsyev_backend` and
-  `Code/chapter4/04_02_benchmark/dsyevd_backend`.
+- Third-party dependencies now live under `Code/third_party/`.
+- Use the explicit `Code/chapter4/<section>/...` paths directly; the old top-level Chapter 4 shortcut names are no longer kept.
 - Output files for Sections 4.3, 4.4, and 4.5.3 now live directly under the
   corresponding `Code/chapter4/<section>/output/` directories.
 - `Code/chapter4/04_90_legacy_speedup_attribution` is kept as a retained

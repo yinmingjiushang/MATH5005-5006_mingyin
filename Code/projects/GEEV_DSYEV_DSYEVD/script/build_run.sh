@@ -1,14 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
+find_code_dir() {
+  local dir="$SCRIPT_DIR"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/third_party" && -d "$dir/chapter4" ]]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+CODE_DIR="$(find_code_dir)" || { echo "Failed to locate Code root from $SCRIPT_DIR" >&2; exit 1; }
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
+
 # Minimal builder for eig_bench.c
 # - Only depends on local OpenBLAS
 # - No wraps, no netlib/armpl
 # - Program internally sets threads = {1,2,4} and N=8000
 
 # ===== 0) User-configurable: where is your OpenBLAS installed? =====
-# Example: OB_PREFIX=/home/ec2-user/MATH5005-5006_mingyin/Code/openblas/openblas_install
-OB_PREFIX="${OB_PREFIX:-../../openblas/openblas_install}"
+# Example: OB_PREFIX=/path/to/repo/Code/third_party/openblas_sve
+OB_PREFIX="${OB_PREFIX:-$THIRD_PARTY_DIR/openblas_sve}"
 
 # ===== 1) Compiler & flags =====
 CC="${CC:-gcc}"
@@ -35,9 +50,9 @@ else
 fi
 
 # ===== 2) Sources & output =====
-SRC_DIR="../src"
+SRC_DIR="$SCRIPT_DIR/../src"
 SRC_MAIN="${SRC_DIR}/main.c"   # <-- use the simplified benchmark source
-OUT_DIR="../output"
+OUT_DIR="$SCRIPT_DIR/../output"
 OBJ_DIR="${OUT_DIR}/obj"
 BIN_DIR="${OUT_DIR}/bin"
 BIN="${BIN_DIR}/main"

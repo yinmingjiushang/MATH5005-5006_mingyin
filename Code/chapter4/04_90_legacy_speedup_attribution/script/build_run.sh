@@ -5,6 +5,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 CODE_DIR="$(cd -- "$SCRIPT_DIR/../../.." >/dev/null 2>&1 && pwd -P)"
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
 
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
@@ -43,7 +44,7 @@ WRAP3D_LDFLAGS=()
 for s in "${WRAP3D_SYMS[@]}"; do WRAP3D_LDFLAGS+=("-Wl,--wrap=${s}"); done
 
 # ====== 2. OpenBLAS (single library for 4.4) ======
-OPENBLAS_PREFIX="$CODE_DIR/openblas/openblas_install"
+OPENBLAS_PREFIX="$THIRD_PARTY_DIR/openblas_sve"
 CFLAGS_OB="$CFLAGS_BASE -I$OPENBLAS_PREFIX/include"
 LDFLAGS_OB="$OPENBLAS_PREFIX/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 

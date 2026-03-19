@@ -3,12 +3,24 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
-CODE_DIR="$(cd -- "$SCRIPT_DIR/../.." >/dev/null 2>&1 && pwd -P)"
+find_code_dir() {
+  local dir="$SCRIPT_DIR"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/third_party" && -d "$dir/chapter4" ]]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+CODE_DIR="$(find_code_dir)" || { echo "Failed to locate Code root from $SCRIPT_DIR" >&2; exit 1; }
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
 OUT_DIR="$SCRIPT_DIR/../output/disasm"
 mkdir -p "$OUT_DIR"
 
-SVE_LIB="$CODE_DIR/openblas/openblas_install/lib/libopenblas.a"
-SIMD_LIB_GLOB="$CODE_DIR/openblas_simd/lib/libopenblas_armv8p"'*.a'
+SVE_LIB="$THIRD_PARTY_DIR/openblas_sve/lib/libopenblas.a"
+SIMD_LIB_GLOB="$THIRD_PARTY_DIR/openblas_simd/lib/libopenblas_armv8p"'*.a'
 
 # resolve SIMD-baseline lib path
 SIMD_LIB=""
@@ -19,7 +31,7 @@ for f in $SIMD_LIB_GLOB; do
   fi
 done
 if [[ -z "$SIMD_LIB" ]]; then
-  SIMD_LIB="$CODE_DIR/openblas_simd/lib/libopenblas.a"
+  SIMD_LIB="$THIRD_PARTY_DIR/openblas_simd/lib/libopenblas.a"
 fi
 
 if [[ ! -f "$SVE_LIB" ]]; then

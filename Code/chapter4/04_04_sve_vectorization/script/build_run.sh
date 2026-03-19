@@ -5,6 +5,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 CODE_DIR="$(cd -- "$SCRIPT_DIR/../../.." >/dev/null 2>&1 && pwd -P)"
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
 
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
@@ -46,16 +47,16 @@ WRAP3D_LDFLAGS=()
 for s in "${WRAP3D_SYMS[@]}"; do WRAP3D_LDFLAGS+=("-Wl,--wrap=${s}"); done
 
 # ====== 2. Library Presets (4.3: OpenBLAS SVE vs SIMD baseline only) ======
-# - openblas/openblas_install: SVE build — run Code/openblas/build_arm_threads_sve.sh (installs there)
-# - openblas_simd: ARMV8 SIMD baseline — run Code/openblas/build_arm_threads_scalar.sh → Code/openblas_simd/
+# - third_party/openblas_sve: SVE build
+# - third_party/openblas_simd: ARMV8 SIMD baseline
 
-# ===== OpenBLAS SVE (static; build_arm_threads_sve.sh → Code/openblas/openblas_install) =====
-OPENBLAS_SVE_PREFIX="$CODE_DIR/openblas/openblas_install"
+# ===== OpenBLAS SVE (static; build_arm_threads_sve.sh -> Code/third_party/openblas_sve) =====
+OPENBLAS_SVE_PREFIX="$THIRD_PARTY_DIR/openblas_sve"
 CFLAGS_OB_SVE="$CFLAGS_BASE -I$OPENBLAS_SVE_PREFIX/include"
 LDFLAGS_OB_SVE="$OPENBLAS_SVE_PREFIX/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 
-# ===== OpenBLAS SIMD baseline (static, Code/openblas_simd; force ARMV8+ONLY_C build) =====
-OPENBLAS_SIMD_PREFIX="$CODE_DIR/openblas_simd"
+# ===== OpenBLAS SIMD baseline (static, Code/third_party/openblas_simd) =====
+OPENBLAS_SIMD_PREFIX="$THIRD_PARTY_DIR/openblas_simd"
 OPENBLAS_SIMD_LIB="$OPENBLAS_SIMD_PREFIX/lib"
 # Prefer libopenblas_armv8p*.a (ARMV8 + ONLY_C=1 from build_arm_threads_scalar.sh)
 if [[ -d "$OPENBLAS_SIMD_LIB" ]]; then
@@ -71,18 +72,18 @@ CFLAGS_OB_SIMD="$CFLAGS_BASE -I$OPENBLAS_SIMD_PREFIX/include"
 LDFLAGS_OB_SIMD="${OPENBLAS_SIMD_A:-$OPENBLAS_SIMD_LIB/libopenblas.a} $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 
 # ArmPL (STATIC THREAD=1)
-ARMPL_PREFIX="$CODE_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
+ARMPL_PREFIX="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
 CFLAGS_AP="$CFLAGS_BASE -I$ARMPL_PREFIX/include"
 LDFLAGS_AP="$ARMPL_PREFIX/lib/libarmpl.a -lpthread -ldl $LIBS_FORTRAN $LIBS_MATH"
 
 # ArmPL (STATIC THREAD=2)
-#ARMPL_PREFIX="../../armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
+#ARMPL_PREFIX="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
 #CFLAGS_AP="$CFLAGS_BASE -I$ARMPL_PREFIX/include"
 #LDFLAGS_AP="$ARMPL_PREFIX/lib/libarmpl_mp.a -fopenmp -lgomp -lpthread -ldl $LIBS_FORTRAN $LIBS_MATH"
 
 # ArmPL dynamic (add a new preset)
-#export LD_LIBRARY_PATH="$CODE_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc/lib:$LD_LIBRARY_PATH"
-#ARMPL_PREFIX="$CODE_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
+#export LD_LIBRARY_PATH="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc/lib:$LD_LIBRARY_PATH"
+#ARMPL_PREFIX="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
 #CFLAGS_AP_DYN="$CFLAGS_BASE -I$ARMPL_PREFIX/include"
 #LDFLAGS_AP_DYN="-L$ARMPL_PREFIX/lib -larmpl -lpthread -ldl $LIBS_FORTRAN $LIBS_MATH"
 

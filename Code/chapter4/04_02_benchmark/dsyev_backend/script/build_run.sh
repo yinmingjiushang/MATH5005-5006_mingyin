@@ -14,6 +14,7 @@ TAG="${1:-}"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd -P)"
 CODE_DIR="$(cd -- "$ROOT_DIR/../../.." >/dev/null 2>&1 && pwd -P)"
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
 
 # =============== 1) Compiler setup ===============
 CC_DEFAULT="${CC:-gcc}"
@@ -32,8 +33,8 @@ fi
 CC="${CC_DEFAULT}"
 
 # =============== 2) Library preset (OpenBLAS) ===============
-CFLAGS_OB="$CFLAGS_BASE -DOPENBLAS_USE64BITINT -I$CODE_DIR/openblas/openblas_install/include"
-LDFLAGS_OB="$CODE_DIR/openblas/openblas_install/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
+CFLAGS_OB="$CFLAGS_BASE -DOPENBLAS_USE64BITINT -I$THIRD_PARTY_DIR/openblas_sve/include"
+LDFLAGS_OB="$THIRD_PARTY_DIR/openblas_sve/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 
 # =============== 3) Sources ===============
 SRC_DIR="$ROOT_DIR/src"

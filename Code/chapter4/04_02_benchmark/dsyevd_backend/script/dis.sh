@@ -6,6 +6,7 @@ die(){ echo "[X] $*" >&2; exit 1; }
 here="$(cd -- "$(dirname "$0")" && pwd -P)"
 root="$(cd "$here/.." && pwd -P)"
 code_dir="$(cd "$root/../../.." && pwd -P)"
+third_party_dir="$code_dir/third_party"
 
 OUT_DIR="$root/output"
 OBJ_DIR="$OUT_DIR/obj"
@@ -19,8 +20,8 @@ CFLAGS_BASE="-O3 -std=c11 -D_POSIX_C_SOURCE=200112L \
   -mcpu=native -mtune=native \
   -fno-math-errno -fno-trapping-math -ffp-contract=fast"
 
-OPENBLAS_INC="$code_dir/openblas/openblas_install/include"
-OPENBLAS_LIB="$code_dir/openblas/openblas_install/lib/libopenblas.a"
+OPENBLAS_INC="$third_party_dir/openblas_sve/include"
+OPENBLAS_LIB="$third_party_dir/openblas_sve/lib/libopenblas.a"
 
 CFLAGS_OB="$CFLAGS_BASE -DOPENBLAS_USE64BITINT -I${OPENBLAS_INC}"
 LDFLAGS_OB="${OPENBLAS_LIB} -lpthread -ldl -lgfortran -lm -Wl,-Map,${OUT_DIR}/link.map"

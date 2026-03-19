@@ -2,12 +2,15 @@
 # Windows build script for OpenBLAS (MSYS2 + MinGW-w64, UCRT64 environment)
 # Usage:
 #   bash build_openblas_windows.sh
+# Default paths are anchored to this script's directory under Code/third_party/openblas_src/.
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 # ========= Configuration =========
-SRC_DIR="${SRC_DIR:-OpenBLAS-src}"      # Source directory (git clone if missing)
-PREFIX="${PREFIX:-$PWD/install}"        # Install prefix (contains lib/ and include/)
+SRC_DIR="${SRC_DIR:-$SCRIPT_DIR/OpenBLAS-src}"  # Source directory (git clone if missing)
+PREFIX="${PREFIX:-$SCRIPT_DIR/install}"         # Install prefix (contains lib/ and include/)
 INSTALL_LIB_DIR="$PREFIX/lib"
 INSTALL_INC_DIR="$PREFIX/include"
 

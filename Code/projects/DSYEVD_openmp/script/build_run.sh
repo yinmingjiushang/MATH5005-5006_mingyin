@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd -P)"
+find_code_dir() {
+  local dir="$SCRIPT_DIR"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/third_party" && -d "$dir/chapter4" ]]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+CODE_DIR="$(find_code_dir)" || { echo "Failed to locate Code root from $SCRIPT_DIR" >&2; exit 1; }
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
+
 # NOTE:
 # 不在此处全局强行钉线程；各 case 自己设置。
 # export OMP_NUM_THREADS=${OMP_NUM_THREADS:-1}
@@ -39,18 +55,18 @@ if [[ "${UNAME_S}" == "Darwin" ]]; then
 fi
 
 # =============== 2) Library presets ===============
-CFLAGS_NETLIB="$CFLAGS_BASE -I../../LAPACK/build/include"
-LDFLAGS_NETLIB="../../LAPACK/build/lib/liblapack.a ../../LAPACK/build/lib/libblas.a $LIBS_FORTRAN $LIBS_MATH"
+CFLAGS_NETLIB="$CFLAGS_BASE -I$THIRD_PARTY_DIR/LAPACK/build/include"
+LDFLAGS_NETLIB="$THIRD_PARTY_DIR/LAPACK/build/lib/liblapack.a $THIRD_PARTY_DIR/LAPACK/build/lib/libblas.a $LIBS_FORTRAN $LIBS_MATH"
 
-CFLAGS_OB="$CFLAGS_BASE -I../../openblas/openblas_install/include"
-LDFLAGS_OB="../../openblas/openblas_install/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
+CFLAGS_OB="$CFLAGS_BASE -I$THIRD_PARTY_DIR/openblas_sve/include"
+LDFLAGS_OB="$THIRD_PARTY_DIR/openblas_sve/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 
-ARMPL_PREFIX="../../armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
+ARMPL_PREFIX="$THIRD_PARTY_DIR/armpl/arm-performance-libraries_25.07_rpm/armpl_local/armpl_25.07_gcc"
 CFLAGS_AP="$CFLAGS_BASE -I$ARMPL_PREFIX/include"
 LDFLAGS_AP="$ARMPL_PREFIX/lib/libarmpl.a -lpthread -ldl $LIBS_FORTRAN $LIBS_MATH"
 
 # =============== 3) Sources ===============
-SRC_DIR="../src"
+SRC_DIR="$ROOT_DIR/src"
 SRC_MAIN="$SRC_DIR/syevd_detailed.c"
 SRC_WRAP_TIMERS="$SRC_DIR/wrap_timers.c"
 SRC_WRAP_TREE="$SRC_DIR/wrap_syevd.c"   # 计时 wrap（你提供的 wrap_syevd.c）
@@ -164,7 +180,7 @@ case "$TAG" in
 esac
 
 # =============== 6) Build & Run ===============
-OUT_DIR="../output"
+OUT_DIR="$ROOT_DIR/output"
 OBJ_DIR="$OUT_DIR/obj"
 BIN_DIR="$OUT_DIR/bin"
 mkdir -p "$OBJ_DIR" "$BIN_DIR"

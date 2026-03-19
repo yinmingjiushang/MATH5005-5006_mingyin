@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 CODE_DIR="$(cd -- "$SCRIPT_DIR/../../.." >/dev/null 2>&1 && pwd -P)"
+THIRD_PARTY_DIR="$CODE_DIR/third_party"
 OUT_DIR="$SCRIPT_DIR/../output"
 OBJ_DIR="$OUT_DIR/obj"
 BIN_DIR="$OUT_DIR/bin"
@@ -22,7 +23,7 @@ CFLAGS_BASE="-O3 -std=c11 -D_POSIX_C_SOURCE=200809L \
 LIBS_FORTRAN="-lgfortran"
 LIBS_MATH="-lm"
 
-OPENBLAS_PREFIX="$CODE_DIR/openblas/openblas_install"
+OPENBLAS_PREFIX="$THIRD_PARTY_DIR/openblas_sve"
 CFLAGS_OB="$CFLAGS_BASE -I$OPENBLAS_PREFIX/include"
 LDFLAGS_OB="$OPENBLAS_PREFIX/lib/libopenblas.a $LIBS_FORTRAN $LIBS_MATH -lpthread -ldl"
 
