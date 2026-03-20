@@ -7,6 +7,10 @@
 - `third_party/`: external libraries, source drops, installers, and build outputs such as OpenBLAS, LAPACK, and ArmPL.
 - `legacy/`: retained older or superseded experiments that are no longer the main entry points.
 
+Current legacy note:
+
+- `legacy/experiment_4_x_useless/`: retained legacy source snapshot for historical reference only. It is not the current Chapter 4 entry point and is not the replacement for `projects/experiment_4_x_new/`; keep it for source provenance while continuing to ignore generated outputs.
+
 OpenBLAS layout under `Code/third_party/`:
 
 - `openblas_src/`: OpenBLAS source checkout and build scripts.

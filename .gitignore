@@ -21,8 +21,8 @@ Code/third_party/armpl/arm-performance-libraries_25.07_rpm/
 Code/projects/DSYEV_DSYEVD/script/tools/
 Code/projects/DSYEV_DSYEVD/src/openblas_info
 
-## Deprecated local-only code
-Code/legacy/experiment_4_x_useless/
+## Legacy experiments
+# Legacy source trees can be tracked; generated outputs remain ignored by **/output/.
 
 ## Editor settings and convenience scripts
 .idea/
