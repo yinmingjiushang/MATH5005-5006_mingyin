@@ -25,7 +25,7 @@ import scipy as sp
 from scipy.linalg import lapack
 
 # ------------------ Config ---------------------
-sizes = [500, 1000, 2000, 4000, 8000]   # adjust as needed
+sizes = [512, 1024, 2048, 4096]         # align chapter 1 with the chapter 4 benchmark range
 reps  = 5                                # number of repeats per measurement
 seed  = 0                                # RNG seed for reproducibility
 
