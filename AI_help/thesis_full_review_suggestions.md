@@ -1,430 +1,427 @@
-# Thesis Full Review Suggestions for `latex/main.pdf`
+# Thesis Review Suggestions from a Mathematics Master's Project Perspective
 
 审阅对象：
 
 - `latex/main.pdf`
-- 对照阅读的源文件：`latex/main.tex` 与 `latex/chapters/**/*.tex`
-- 已参考现有记录：`AI_help/ai_2_revision_plan.md`、`AI_help/revision_notes.md`
+- 对照源文件：`latex/main.tex` 与 `latex/chapters/**/*.tex`
+- 视角：数学系硕士毕业 project，重点看数学自洽性、实验可信度、论证闭环、AI 痕迹和提交前风险。
 
-审阅重点：
+## 1. 总体判断
 
-- 从 Introduction 到 Conclusion/Future Work 的正文逻辑是否完整；
-- 技术论证、实验叙述和结论是否一致；
-- 正文从 Introduction 开始、不含 Appendix 是否控制在 50 页以内；
-- 哪些修改最值得做，以及哪些修改会带来页数风险。
+这篇 thesis 现在的主线是成立的：
 
-## 1. 页数和编译状态
+1. Chapter 2 给出数学基础：Householder reduction、implicit QR/QL、divide-and-conquer。
+2. Chapter 3 把数学算法映射到 LAPACK 的 `DSYEV` 和 `DSYEVD` 路径。
+3. Chapter 4 用实验数据解释 runtime gap 的来源。
+4. Chapter 5 回答 routine selection 的实际问题，并说明 runtime--workspace tradeoff。
 
-当前页数状态是满足要求但没有余量。
+从数学系硕士 project 的角度看，Chapter 2 偏重数学推导不是问题，反而是项目的合理支撑。后续不建议再为了“数学太多”大幅删 Chapter 2。更重要的是保证：
 
-- `latex/main.log` 显示整份 PDF 输出为 68 pages。
-- `latex/main.toc` 显示：
-  - Chapter 1 `Introduction` 从第 1 页开始；
-  - Chapter 5 `Future Work` 在第 50 页；
-  - Appendix A 从第 51 页开始。
-- 因此，按“正文从 Introduction 开始，不带 appendix”计算，Chapter 1 到 Chapter 5 正好是 50 页。
+- 数学符号和例子前后一致；
+- 实验结论不过度外推；
+- 数据来源、repeat protocol 和 validation 说得足够清楚；
+- 文字不像模板化生成，而像作者自己围绕实验得出的判断。
 
-这意味着后续任何新增段落、表格或图说明都可能把 Appendix 推到第 52 页。建议采取“先删减再新增”的修订策略。最安全的目标不是保持 50 页，而是压到 47 到 49 页，给最终排版、图表浮动和导师要求留出缓冲。
+当前页数也满足要求：
 
-编译警告方面，当前没有明显的 undefined reference 或 missing citation 警告。主要排版问题是少量 overfull/underfull：
+- `latex/main.toc` 显示 Chapter 5 从第 47 页开始；
+- Future Work 在第 49 页；
+- Appendix A 从第 50 页开始；
+- 因此正文从 Introduction 到 Future Work 为 49 页，不含 Appendix 控制在 50 页以内。
 
-- `latex/chapters/02_Mathematical_Foundations/02_02_STEQR.tex` lines 590--596 附近有 overfull hbox。
-- `latex/chapters/02_Mathematical_Foundations/02_02_STEQR.tex` line 839 附近有 overfull hbox。
-- `latex/chapters/06_Appendices/06_02_experimental_details.tex` lines 312--315 附近有轻微 overfull hbox。
-- bibliography 里的 GitHub URL 有 underfull hbox，属于长 URL 常见问题。
+## 2. 提交前优先修的具体问题
 
-这些不是内容性错误，但最终提交前建议处理。
+### 2.1 已完成：统一 Chapter 2.2 和 2.3 的代表性特征向量
 
-## 2. 总体判断
+位置：
 
-论文主线是清楚的：先讲 dense symmetric eigenproblem 的三阶段结构，再比较 QR/QL 与 divide-and-conquer 的三对关系：
+- `latex/chapters/02_Mathematical_Foundations/02_02_STEQR.tex` lines 865--878。
+- `latex/chapters/02_Mathematical_Foundations/02_03_STEDC.tex` lines 512--523。
 
-- Chapter 2：数学算法差异；
-- Chapter 3：LAPACK driver path 差异；
-- Chapter 4：实验和 profiling 证明差异主要来自 tridiagonal eigensolver/eigenvector path；
-- Chapter 5：把结论落到 runtime-workspace tradeoff。
+问题：
 
-目前最大的优点是论证链条已经闭合：`DSYEV`/`DSYEVD` 的总时间差、stage timing、profiling、hardware counters、memory footprint 都指向同一个解释。
-
-最大的风险有四个：
-
-1. 正文刚好 50 页，任何新增都会超页。
-2. Chapter 2 太长，数学推导和 worked examples 占了正文的大部分，会压缩实验贡献的空间。
-3. 少数技术表述需要更精确，特别是 Householder rank-2 update 的 scaling、D&C secular equation 中 `rho` 的符号约定、Chapter 4 中 Netlib/OpenBLAS stack 的描述。
-4. Chapter 1 的 preview timing 与 Chapter 4 benchmark timing 不一致，但没有在 caption 或正文中说明来源，容易让读者误以为数据冲突。
-
-## 3. 最高优先级修改
-
-### 3.1 先释放 2 到 4 页正文空间
-
-当前正文正好 50 页。建议先从 Chapter 2 和 Chapter 4 表格释放空间。
-
-最推荐的删减顺序：
-
-1. 压缩或移出 `latex/chapters/02_Mathematical_Foundations/02_02_STEQR.tex` 的 worked example，尤其是 lines 658--971。
-   - 保留矩阵、Wilkinson shift、bulge path、deflation summary 即可。
-   - 大量中间矩阵和一个 eigenvector column 可以移到 Appendix 或删去。
-   - 预计可节省 2 到 3 页。
-
-2. 删除 Chapter 2.2 中重复的 implicit shifted QR equivalence 推导。
-   - lines 444--525 已经通过 Implicit Q theorem 解释 equivalence；
-   - lines 527--635 又以 “Core Derivation” 重讲一遍。
-   - 建议二选一，保留 theorem + 简短 derivation。
-   - 预计可节省约 1 页。
-
-3. 压缩 `latex/chapters/02_Mathematical_Foundations/02_03_STEDC.tex` 的 running example。
-   - 现在在 split、subproblem、merge、secular equation、eigenvector reconstruction 多处重复展开。
-   - 建议保留 split 和 secular equation 两处，其余用一句话连接。
-   - 预计可节省 1 到 2 页。
-
-4. 把 `latex/chapters/04_Experiments/04_05_03_deep_candidate_tables.tex` 的 deep-counter tables 移到 Appendix。
-   - Chapter 4 主文已经有 compact instruction/stall table。
-   - deep-counter tables 是 supporting evidence，不是核心论证必需。
-   - 预计可节省半页到 1 页。
-
-这样做以后，正文可以从 50 页降到约 46 到 48 页。之后再补少量必要解释也不会超页。
-
-### 3.2 给 Chapter 1 的 preview table 加实验来源
-
-位置：`latex/chapters/01_Introduction/01_introduction.tex` Table `tab:timing`。
-
-问题：Chapter 1 preview table 的 full eigenpair timing 与 Chapter 4 OpenBLAS SVE benchmark 不同。例如：
-
-- Chapter 1: at `n=4096`, `DSYEV` eigpairs = `106.606` s, `DSYEVD` eigpairs = `19.804` s。
-- Chapter 4: at `n=4096`, `DSYEV` = `66.255` s, `DSYEVD` = `14.482` s。
-
-这不一定错，但目前没有说明 Table 1.1 是哪个 backend、thread setting、run protocol 或 preliminary run。读者可能以为同一实验给了两组不同结果。
-
-建议二选一：
-
-- 最稳妥：把 Chapter 1 preview table 换成 Chapter 4 的 OpenBLAS SVE data，并说明 eigenvalues-only 只是 preview。
-- 或者：保留现有数据，但 caption 加上 backend/thread/repetition 信息，例如 `preliminary single-thread timing under ...`，并在正文说 Chapter 4 uses a separately controlled OpenBLAS SVE benchmark。
-
-### 3.3 修正 Householder rank-2 update 的 scaling 说明
-
-位置：`latex/chapters/02_Mathematical_Foundations/02_01_SYTRD.tex` lines 76--88。
-
-当前写法：
+2.2 和 2.3 使用同一个 \(6\times6\) tridiagonal test matrix，并且都报告最小特征值
+\[
+\lambda_1\approx 0.2538.
+\]
+2.3 的代表性 eigenvector 是
 
 ```tex
-A^{(j+1)} = A^{(j)} - u y^T - y u^T,
-\qquad
-y = A^{(j)} u - \frac{1}{2}(u^T A^{(j)}u)\,u.
+[0.7770, -0.5798, 0.2354, -0.0667, 0.0146, -0.0025]^T
 ```
 
-这个公式依赖于 `u` 的归一化约定。前面 Householder reflector 写成
+这和直接数值计算一致。2.2 原先写成
 
 ```tex
-H = I - 2 vv^T/(v^Tv)
+[0.7800, -0.5800, 0.2400, -0.0700, 0.0100, 0]^T
 ```
 
-如果这里的 `u` 不是普通未归一化 Householder vector，而是满足 `H = I - uu^T` 的 scaled vector，则公式成立。现在文本只说 “Let `u` denote the Householder vector”，容易造成 scaling 不清。
+它不是大错，但作为同一个 worked example，会让读者以为 `STEQR` 和 `STEDC` 给出了不同 eigenvector。最稳妥是统一数值；当前正文已经按下面的四位小数版本统一。
 
-建议改成：
+建议改法：
 
-- 明确 `u` 是 scaled Householder vector, chosen so that `H_j = I - u u^T`；
-- 或者改用 LAPACK-style `tau` 形式：`H = I - tau v v^T`，再写对应的 symmetric rank-2 update。
+```tex
+z_1 \approx
+\left[\begin{array}{r}
+0.7770\\
+-0.5798\\
+0.2354\\
+-0.0667\\
+0.0146\\
+-0.0025
+\end{array}\right].
+```
 
-这是技术准确性优先项，建议一定改。
+状态：已将 2.2 的代表性 eigenvector 改为与 2.3 一致的四位小数版本。这个前后一致性问题已处理。
 
-### 3.4 明确 divide-and-conquer 中 `rho` 的符号约定
+### 2.2 给 residual/orthogonality checks 补实际数值
 
-位置：`latex/chapters/02_Mathematical_Foundations/02_03_STEDC.tex`，特别是 lines 28--31、89--123、461--498。
+位置：
 
-当前 split 定义 `rho := b_m`，但后面 secular equation/interlacing proposition 假设 `rho > 0`。对于一般实对称 tridiagonal matrix，`b_m` 可能为负。当前 KMS example 里是正的，所以例子没问题，但一般理论表述需要补一句。
+- `latex/chapters/06_Appendices/06_02_experimental_details.tex` lines 335--341。
+- 也可在 `latex/chapters/04_Experiments/04_01_setup.tex` lines 89--98 简短提一句。
+
+当前 Appendix 只写：
+
+```tex
+which remained within recommended thresholds for all reported experiments.
+```
+
+问题：
+
+这句话太泛。数学系论文里，实验 correctness checks 最好给出实际最大值或至少给出阈值。否则读者只能相信结果“通过了”，但看不到误差量级。
+
+建议增加一个小表或一句话，例如：
+
+```tex
+Across the reported runs, the largest observed normalized residual was ...,
+and the largest observed orthogonality error was ....
+```
+
+如果你已有 CSV/日志，建议填真实最大值。没有的话，至少写明使用的 threshold，例如 `O(10^{-12})` 或 LAPACK-style scaled tolerance，并说明它来自哪一个 check。
+
+优先级：高。它能显著提高实验可信度。
+
+### 2.3 在 Chapter 4 setup 主文补 repeat count 和 raw data pointer
+
+位置：
+
+- `latex/chapters/04_Experiments/04_01_setup.tex` lines 89--98。
+- Appendix 已有 repeat protocol：`latex/chapters/06_Appendices/06_02_experimental_details.tex` lines 62--71。
+
+问题：
+
+Chapter 4 主文多处 caption 写 `median over repeated runs`，但 repeat count 主要在 Appendix。主文读者可能看完表格后还不知道 median 是几个 run 的 median。
+
+建议在 Chapter 4 setup 的 performance measurement 段落后加一句：
+
+```tex
+For the benchmark and controlled-comparison tables, one warm-up run is discarded;
+the reported medians use five measured runs for \(n\le 2048\) and three measured
+runs for \(n=4096\), with CSV result snapshots stored under
+\texttt{Code/chapter4/results/}.
+```
+
+优先级：高。这个改动小，但对 reproducibility 很有帮助。
+
+### 2.4 把 KMS matrix 的外推边界提前到 Chapter 4 setup
+
+位置：
+
+- `latex/chapters/04_Experiments/04_01_setup.tex` lines 104--120。
+- Conclusion limitations 已经有类似内容：`latex/chapters/05_Conclusion/05_03_limitations.tex` lines 17--23。
+
+问题：
+
+Chapter 5 已经说明 KMS matrix 不代表所有谱分布，但 Chapter 4 setup 里还可以更早提醒一次。否则读者看到 Chapter 4 数据时，可能会把结论理解成覆盖所有 dense symmetric matrices。
+
+建议在 test matrices 段落末尾加一句：
+
+```tex
+The KMS family is used here as a controlled dense SPD test family, not as a
+representative sample of all possible spectra or conditioning patterns.
+```
+
+优先级：中高。它能防止实验结论被误读为 universal claim。
+
+## 3. 数学章节的优化建议
+
+### 3.1 Chapter 2 的数学占比可以保留
+
+Chapter 2 从第 4 页到第 28 页，确实是全文最大的一章。但这是数学系 project，可以接受。现在不建议继续压缩数学主干。保留原因：
+
+- Householder reduction 解释了 dense-to-tridiagonal 的第一阶段；
+- QR/QL section 解释了 `DSTEQR` 的 rotation-heavy 来源；
+- D&C section 解释了 `DSTEDC` 的 split--merge 和 secular equation；
+- Chapter 4 的性能解释依赖这些数学结构。
+
+后续只做精修，不做大删。
+
+### 3.2 QR subspace convergence 的假设可以更严谨
+
+位置：
+
+- `latex/chapters/02_Mathematical_Foundations/02_02_STEQR.tex` lines 50--112。
+
+问题：
+
+这里用 power/subspace convergence 引入 QR iteration。现在写了条件
+\[
+|\lambda_m|>|\lambda_{m+1}|.
+\]
+但还应说明初始 subspace 对目标 eigenspace 有非零投影，或者说这是 generic starting subspace 下的 motivation。否则严格数学上，若初始 subspace 与某些 eigenvectors 正交，结论不完整。
+
+建议补一句：
+
+```tex
+This statement assumes a generic starting subspace whose projection onto
+\(E_m\) has full rank; it is used here as motivation for QR iteration rather
+than as a full convergence theorem.
+```
+
+优先级：中。
+
+### 3.3 `6n^3` 和 D&C recurrence 的常数要说清楚是 model
+
+位置：
+
+- `latex/chapters/02_Mathematical_Foundations/02_03_STEDC.tex` lines 8--14。
+- `latex/chapters/02_Mathematical_Foundations/02_03_STEDC.tex` lines 577--599。
+- `latex/chapters/02_Mathematical_Foundations/02_04.tex` lines 61--78。
+
+问题：
+
+2.3 开头说 QR/QL full-eigenpair cost 的 standard estimate 是 \(6n^3\)。后面 D&C 用
+\[
+C(n)=n^3+2C(n/2)\sim \frac{4}{3}n^3.
+\]
+这作为解释可以，但从数学严格性看，常数依赖实现、deflation、leaf solver、是否形成全部 eigenvectors。建议把这些都写成 simplified cost model，而不是像精确 flop theorem。
+
+建议补一句：
+
+```tex
+The constants here are used as a simplified leading-order model; LAPACK timings
+also depend on deflation, leaf solvers, memory traffic, and BLAS kernels.
+```
+
+优先级：中。
+
+### 3.4 Householder 和 transpose notation 最后统一
+
+位置：
+
+- `latex/chapters/02_Mathematical_Foundations/02_01_SYTRD.tex` lines 6--30。
+- 全文多处混用 `^T`、`^\top`、`^\mathsf{T}`。
+
+问题：
+
+数学内容可以读懂，但 notation polish 不够统一。现在 Chapter 2 后半和 Abstract 多用 `^\mathsf{T}`，Chapter 2.1 和 Chapter 3 仍有 `^T`、`\top`。
+
+建议最终统一成 `^\mathsf{T}` 或 `^\top`。如果只做小范围，优先统一 Chapter 2 的公式。
+
+优先级：中低。
+
+## 4. LAPACK 和实验解释的优化建议
+
+### 4.1 Chapter 3 中 “bandwidth pressure” 表述略强
+
+位置：
+
+- `latex/chapters/03_LAPACK_Implementation/03_02_03_STEDC.tex` lines 111--118。
+
+当前说法大意是 D&C reduces both arithmetic complexity and bandwidth pressure。问题是 Chapter 4.5.3 的 deep counters 显示 `DSTEDC` 的 L1 miss rate 和 stall-per-instruction 可能更高，只是累计 instruction/stall 更低。因此 “bandwidth pressure” 容易被反问。
+
+建议改成更稳妥：
+
+```tex
+Compared with the traditional QR iteration, the D\&C approach reduces the
+cumulative work in the eigenvector path and exposes more of that work through
+blocked Level-3 BLAS kernels.
+```
+
+优先级：中高。这个能避免 Chapter 3 和 Chapter 4 counters 的细微冲突。
+
+### 4.2 Hardware counters 的最后一句再限定一次 scope
+
+位置：
+
+- `latex/chapters/04_Experiments/04_05_03_hardware_efficiency.tex` lines 107--120。
+
+前文已经多次说 isolated tridiagonal eigensolver stage，但最后一句又写到 “far less total hardware work than the rotation-dominated DSYEV path”。这里仍可能被理解成 end-to-end hardware work。
+
+建议把最后一句明确为：
+
+```tex
+... for the isolated tridiagonal eigensolver stage.
+```
+
+优先级：中。
+
+### 4.3 Deep-counter tables 是否放 Appendix
+
+位置：
+
+- `latex/chapters/04_Experiments/04_05_03_deep_candidate_tables.tex`。
+- 现在正文 Chapter 4.5.3 直接 `\input` 这两张表。
+
+判断：
+
+正文现在 49 页，没有页数压力，所以不是必须移动。但从阅读流畅度看，这两张表是 supporting evidence，不是主证据。主证据是 instruction count、stall count 和 RSS。
 
 建议：
 
-- 在 notation 处说明 “for the exposition below we take `rho > 0`; if the removed coupling is negative, its sign can be absorbed into the splitting vector or the interlacing intervals are adjusted accordingly”。
-- 或者定义 `rho = |b_m|` 并把 sign absorbed into `u`。
+- 如果最终想让 Chapter 4 更紧凑，把 deep-counter tables 移到 Appendix；
+- 正文保留一句 “normalized deep-counter views are reported in Appendix ...”；
+- 如果不想动结构，现在保留也可以。
 
-这样可以避免 theorem 的假设和前面定义不完全一致。
+优先级：低。
 
-### 3.5 澄清 Netlib-to-OpenBLAS 比较到底改变了什么
+## 5. AI 痕迹和作者 voice
 
-位置：`latex/chapters/04_Experiments/04_03_blas.tex` lines 7--12；也关联 `latex/chapters/04_Experiments/04_01_setup.tex`。
+### 5.1 不要追求“骗过 AI detector”，要让论证更像自己的实验判断
 
-当前 Chapter 4 setup 表示三种配置的 LAPACK layer 都是 Reference LAPACK lineage，OpenBLAS SIMD/SVE 主要差别在 BLAS kernels。可是 Section 4.3 写道 “both the LAPACK and BLAS layers change”。这容易被认为与 Table 4.1 矛盾。
+现在已经减少了一批模板句，但全文仍有一些常见结构，例如：
 
-建议改成更精确的说法：
+- `This section provides...`
+- `This section returns...`
+- `The aim is not to...`
+- `The point of Figure...`
 
-- 如果实际是 Reference LAPACK linked against different BLAS libraries，就写 “the LAPACK source lineage is kept fixed, while the BLAS backend and build configuration change”。
-- 如果实际 OpenBLAS build also supplies LAPACK objects，那么需要在 setup 表格里说清楚 OpenBLAS 的 LAPACK objects 与 Netlib objects 的关系。
+这些不是错误，也不必全部改。更有效的做法是加入少量具体实验判断，例如：
 
-这关系到实验 attribution，建议优先处理。
+- 为什么 sizes 选 \(512,1024,2048,4096\)；
+- 为什么 KMS \(\rho=0.95\)；
+- 为什么 thread test 只做 1, 2, 4；
+- 为什么 hardware counters 只作为 explanatory evidence；
+- 为什么 Chapter 1 Python-wrapper timing 只作为 motivation。
 
-### 3.6 SVE section 的 table scope 要收紧或补全
+这些内容和你的实验绑定，比单纯换连接词更能降低 AI 式泛泛感。
 
-位置：`latex/chapters/04_Experiments/04_04_simd.tex` lines 21--22 和 table `tab:simd-speedup`。
+### 5.2 AI acknowledgement 建议检查是否过宽
 
-正文说 “for each computational stage”，但表格只列了：
+位置：
 
-- `DSYTRD` for `DSYEV`
-- `DSTEQR`
-- `DSYTRD` for `DSYEVD`
-- `DSTEDC`
+- `latex/main.tex` lines 360--378。
 
-没有列 `DORGTR` 和 `DORMTR`，而这两个 back-transformation stages 在前文中非常重要，尤其 `DORMTR` 在 `DSYEVD` end-to-end profile 中占比很高。
+问题：
 
-建议二选一：
+现在 AI acknowledgement 很完整，但也比较宽，尤其是：
 
-- 补上 `DORGTR` 和 `DORMTR` 的 SIMD speedup columns；
-- 或者把文字改成 “selected stages”/“the stages measured in this SIMD experiment”，并解释为什么 back-transformation 不在此表中。
+- “helping form and refine ideas”
+- “suggesting improvements to the design and presentation of experiments”
+- “representative prompts included ...”
 
-如果数据已经有，建议补列；如果没有，建议收紧措辞。
+如果课程允许这样的 disclosure，则可以保留。但从提交风险角度，建议确认学院或课程对 AI acknowledgement 的要求。最稳妥的原则是：准确、具体、不夸大 AI 的作用，也不隐藏真实使用。
 
-## 4. 逐章建议
+建议：
 
-### 4.1 Front Matter and Abstract
+- 保留 AI 使用声明；
+- 把 wording 收紧到实际使用过的范围；
+- 强调 author independently verified mathematics, code, experiments, and conclusions；
+- 避免让读者误解为 AI 参与了核心 mathematical argument 或 experimental interpretation 的原创性。
 
-整体不错。Abstract 能从数学问题讲到 LAPACK 实验，再落到 runtime-workspace tradeoff。
+优先级：中高，因为你现在关心 AI 率和 AI 使用风险。
 
-小建议：
+## 6. 逐章建议
 
-- `main.tex` lines 262--264: “eigenvectors may be chosen orthogonally” 建议改为 “eigenvectors may be chosen to form an orthonormal basis”。数学上更自然。
-- Abstract 已经包含具体 `n=4096` timing 和 RSS，信息量较大但可接受。如果正文页数紧张，Abstract 不计入正文，可以保留。
-- AI acknowledgement 内容比较完整，但它现在放在 `\appendix` 之后。若学校要求 AI acknowledgement 属于 back matter 而不是 appendix，建议调整位置或命令结构，见第 6 节。
-
-### 4.2 Chapter 1 Introduction
+### Chapter 1 Introduction
 
 优点：
 
-- 开头直接建立三阶段路线：dense reduction, tridiagonal eigensolver, back transformation。
-- Scope 比较清楚，没有试图泛泛 survey 全部 eigensolvers。
-- Project aims 与后文结构一致。
+- 研究问题清楚：dense real symmetric full-eigenpair setting。
+- Python-wrapper preview timing 已经和 Chapter 4 controlled benchmark 区分。
+- Scope 明确，不再像泛泛 survey。
 
 建议：
 
-- Table 1.1 必须说明数据来源或替换为 Chapter 4 一致数据，见第 3.2 节。
-- lines 128--132 和 Section 1.2 中对 `DSYEV`/`DSYEVD` 的介绍有少量重复。如果需要省空间，可以压缩 Section 1.3 开头两句。
-- Section 1.4 的 aims 可以更明确地写 “full eigenpair case (`JOBZ='V'`) is the main experimental object”。现在要到后文才完全明确。
-- Figure 1.1 有帮助，但若最终页数超了，可以考虑缩小 vertical spacing，而不是删除图。
+- `latex/chapters/01_Introduction/01_introduction.tex` lines 128--147 的 preview timing 可以保留。
+- 若想进一步降低 AI 感，可在 Table 1.1 前补一句为什么先用 wrapper timing：它是 quick motivation，不是最终 benchmark。
+- Chapter 1 不需要再加长。
 
-### 4.3 Chapter 2 Mathematical Foundations
-
-这是当前最需要控制篇幅的章节。它从第 4 页到第 30 页，约 27 页，占正文超过一半。对于一篇以 implementation/performance comparison 为核心的 thesis，数学基础足够扎实，但比例偏重。
-
-#### Householder section
-
-- 技术重点是 rank-2 update scaling，见第 3.3 节。
-- `Q^T`、`Q^\top`、`Q^{\mathsf T}` 混用较多。建议全篇统一为 `^\mathsf T` 或 `^\top`。
-- `\tag{$\star$}` 可以换成 `\label{eq:householder-rank2}`，后文引用更正式。
-
-#### QR/QL section
-
-当前内容很完整，但有明显压缩空间。
-
-建议：
-
-- 删除或合并 “Spectral Decomposition and Subspace Convergence” 与 “Block Iteration and the QR Iteration” 中与主线关系较远的推导。你的 thesis 不需要完整从 subspace iteration 推导到 QR algorithm，保留 one-page motivation 足够。
-- Implicit Q theorem 与 “Core Derivation of the Implicit--Shift QR Step” 重复。保留 theorem + short explanation 即可。
-- Worked example 过长。建议压缩为：
-  - 6x6 matrix；
-  - Wilkinson shift；
-  - first Givens creates bulge；
-  - bulge path table；
-  - subdiagonal decay summary；
-  - 一句说明 eigenvectors are accumulated when requested。
-  中间大矩阵可以移到 Appendix。
-- lines 919--971 的 eigenvector discussion 可以删短。因为 D&C section 也给了同一个 smallest eigenvector，两个近似值略有差别，反而可能让读者分心。
-
-#### Divide-and-conquer section
-
-优点是 split, rank-one merge, secular equation, reconstruction 的逻辑很清楚。
-
-建议：
-
-- 补 `rho` 符号约定，见第 3.4 节。
-- Running example 出现次数较多。保留能说明 rank-one merge 的关键数值，其他细节可移到 Appendix。
-- Secular equation 的 derivation 很好，建议保留。
-- `li1994secular` 和 `gu1994rank` 在 bibliography 中存在，但正文似乎主要引用 `gu1995divide` 与 `parlett1998symmetric`。如果你讨论 stable secular equation solving，可以增加对 Li 1994 或 Gu-Eisenstat rank-one paper 的引用；如果不打算展开，可以保持现状。
-
-#### Algorithm comparison section
-
-建议把 `\texttt{STEQR}`/`\texttt{STEDC}` 改成 “QR/QL route”/“divide-and-conquer route”，或者明确说这些 names are used as shorthand for the mathematical routines before Chapter 3。否则 Chapter 2 “mathematical foundations” 与 LAPACK routine names 有一点混杂。
-
-### 4.4 Chapter 3 LAPACK Implementation
-
-这一章总体比较强，页数也合适。它很好地把 Chapter 2 的算法差异转成 driver path。
-
-建议：
-
-- `DSTEQR` figure 和 `DSTEDC` figure 都有帮助，但两张 vertical flowcharts 占空间。如果正文超页，优先保留其中一张，另一张改成 table or prose。
-- `latex/chapters/03_LAPACK_Implementation/03_02_03_STEDC.tex` lines 328--338: “reduces both arithmetic complexity and bandwidth pressure” 建议稍微收紧。D&C 不一定总是降低 bandwidth pressure，它主要降低 total work 并把 work 组织成更 BLAS-friendly blocked operations。可改为 “reduces total work in the eigenvector path and makes memory traffic more amenable to blocked kernels”。
-- Chapter 3 结尾现在是清楚的，但可以把最后一段更明确地写成 Chapter 4 的实验假设：
-  - `DSYTRD` should be similar；
-  - `DSTEQR` should dominate `DSYEV`；
-  - `DSTEDC`/`DORMTR` should show more blocked work；
-  - `DSYEVD` should use more memory。
-  这会让 Chapter 4 看起来更像验证前面结构判断，而不是事后解释。
-
-### 4.5 Chapter 4 Experiments
-
-这是论文贡献最核心的章节，整体方向正确。主要建议是让实验控制和表格范围更精确。
-
-#### Setup
-
-- `04_01_setup.tex` 对 hardware/software/matrix family 的说明足够。
-- 建议在 main text 中也直接写出 repeat count：`five measured runs for n <= 2048 and three for n=4096`。现在这个信息在 Appendix，有些读者只看 Chapter 4 时会不知道 “median over repeated runs” 具体是多少。
-- KMS matrix 的选择解释较好。可以再加一句 limitation：KMS is a controlled dense SPD family, not a representative sample of all spectral distributions。Conclusion 已经有类似内容，所以这里不一定要加。
-
-#### Overall benchmark
-
-- `04_02_benchmark.tex` analysis 里说 `DSYEVD` is already faster once `n >= 1024`，但表中 `n=512` 也更快。建议改成 “faster at all tested sizes, with the gap becoming more meaningful from n >= 1024”。
-- 建议补一句 back-transformation nuance：在 `n=4096`，`DSYEVD` 的 back-transformation `5.914` s 比 `DSYEV` 的 `3.853` s 更长，但 tri-eig saving 远大于这个额外成本。这能避免读者误读为 `DSYEVD` 每个 stage 都更快。
-- Thread scalability 已经写得稳妥。可再加一句 “This is not intended as a full parallel scaling study”，避免被问为什么只到 4 threads。
-
-#### Netlib-to-OpenBLAS section
-
-- 重点见第 3.5 节：要澄清 comparison stack。
-- Table `tab:blas-speedup` 很有价值，建议保留。
-- Interpretation 很好，尤其 `DSTEQR` 约 `1.0x` 与 `DSTEDC`/back-transform 的 contrast。
-
-#### SVE vectorization section
-
-- 重点见第 3.6 节：table scope 与正文不完全匹配。
-- 如果补不上 `DORGTR/DORMTR`，把 “each computational stage” 改成 “the measured reduction and tridiagonal-solver stages”。
-- 结论 “SVE is secondary” 是合理的，因为最大变化已经来自算法路径和 blocked work availability。
-
-#### Profiling and hardware counters
-
-- Profiling section 的 hot-path table 很强，建议保留。
-- Appendix 中已有 detailed call trees，正文里不需要再展开过多 tree details。
-- Hardware section 的 compact instruction/stall table 很有说服力，建议保留。
-- Deep-counter tables 可以移到 Appendix。正文只保留一句 “normalized counters are reported in Appendix and do not overturn the cumulative-count interpretation”。
-- `04_05_03_hardware_efficiency.tex` lines 225--239 附近句子有语法问题：`Table ... reports ..., DSTEQR executes ...` 中间应断句。建议改为 “Table ... reports ... . In this isolated stage, ...”。
-- 同一节中 “total hardware cost” 建议限定为 “for the isolated tridiagonal eigensolver stage”，避免被理解为 end-to-end hardware cost。
-
-### 4.6 Chapter 5 Conclusion and Future Work
-
-这一章现在比较成熟，和 Chapter 4 数据对得上。
+### Chapter 2 Mathematical Foundations
 
 优点：
 
-- 结论没有说成 universal ranking，而是 runtime-workspace tradeoff。
-- Limitations 讲了 platform、matrix family、single-node CPU、criteria，这些边界是必要的。
-- Future work 自然：libraries/machines、more input families、runtime-memory-accuracy-energy、GPU/distributed。
+- 对数学系硕士论文来说，这是最有学术分量的一章。
+- 2.2 和 2.3 现在都保留了同一个 matrix 的 eigenvalues 和一个 representative eigenvector，便于 2.4 对比。
 
 建议：
 
-- `05_02_practical_guidance.tex` 中 “dense SPD KMS matrices” 很准确，但可以再强调 recommendation applies to `JOBZ='V'` full eigenpairs，不适用于 eigenvalues-only routine choice。
-- Conclusion 中重复了多次 `n=4096` numbers。可以接受，因为这是核心证据；如果需要省半页，可以减少一次重复。
-- “The faster driver is therefore not simply the one with better BLAS tuning” 这类句子很有辨识度，建议保留。
+- 优先修 2.2 和 2.3 eigenvector 数值一致性。
+- 对 subspace convergence 和 complexity constants 加两句限定，避免被问严格条件。
+- 最终统一 transpose notation。
 
-## 5. 正文压缩方案
+### Chapter 3 LAPACK Implementation
 
-如果导师要求必须严格低于 50 页，建议按以下顺序执行。
+优点：
 
-### 方案 A：最小改动，目标 49 页
+- 这一章起到很好的桥梁作用，把 Chapter 2 的算法和 Chapter 4 的 routine timings 接起来。
+- `DSYEV`/`DSYEVD` 的 data flow 现在比较清楚。
 
-- 删除 QR worked example 中的一个或两个大矩阵展示。
-- 把 deep-counter tables 移到 Appendix。
-- 合并 Chapter 4 thread scalability 的两张表，或者只保留 `n=4096` speedup table。
+建议：
 
-风险低，但释放空间有限。
+- 把 `DSTEDC` “reduces bandwidth pressure” 类似说法改成 “reduces cumulative work / exposes blocked BLAS work”。
+- 图的 caption 可以稍微更数据流导向，少用 “important feature” 这类模板词，但这不是必须。
 
-### 方案 B：推荐方案，目标 47 到 48 页
+### Chapter 4 Experiments
 
-- QR worked example 压缩 50% 以上。
-- 删除重复 implicit QR equivalence derivation。
-- D&C running example 只保留 split 和 secular equation 两个数值点。
-- deep-counter tables 移到 Appendix。
+优点：
 
-这是最平衡的方案：保留数学完整性，同时让实验章显得更突出。
+- 证据链完整：end-to-end timing -> stage timing -> BLAS backend -> SVE -> profile -> hardware counters -> memory tradeoff。
+- Chapter 4 的核心结论可信：差距主要来自 tridiagonal eigensolver path，而不是 shared `DSYTRD`。
 
-### 方案 C：大幅精简，目标 45 到 46 页
+建议：
 
-- Chapter 2.2 只保留 QR/QL 的必要概念：shift, deflation, bulge chasing, eigenvector accumulation, cost。
-- 把大部分 derivations 和 both worked examples 移到 Appendix。
-- Chapter 3 flowcharts 改成一个 compact comparison table。
+- 在 setup 主文补 repeat count 和 `Code/chapter4/results/` pointer。
+- 在 setup 主文提前说明 KMS 是 controlled dense SPD family，不代表所有谱分布。
+- Appendix 的 residual checks 补实际数值或 threshold。
+- Hardware-counter section 的最后结论再限定为 isolated tri-eig stage。
 
-这个方案页数最稳，但数学 exposition 会明显变短，只有在页数压力很大时采用。
+### Chapter 5 Conclusion
 
-## 6. LaTeX 和结构性排版建议
+优点：
 
-### 6.1 References 和 AI acknowledgement 的位置
+- 结论没有过度宣称 `DSYEVD` universally better。
+- runtime--workspace tradeoff 说得清楚。
+- limitations 和 future work 合理。
 
-当前 `main.tex` 的顺序是：
+建议：
 
-```tex
-\include{chapters/05_Conclusion/05_main}
-\appendix
-\include{chapters/06_Appendices/06_main}
-...
-\addcontentsline{toc}{chapter}{References}
-\bibliography{references}
-...
-\chapter*{Acknowledgement of AI Use}
-```
+- `latex/chapters/05_Conclusion/05_01_main_findings.tex` lines 5--25 仍有一点“总结式模板”语气，但内容正确。若有时间，可以把 “This thesis set out...” 改成更直接的 result-first opening。
+- Practical guidance 很适合保留，因为它把 project 从纯算法说明落到 routine selection。
 
-也就是说 References 和 AI acknowledgement 都出现在 `\appendix` 之后。它们不会变成 numbered appendix chapter，但在结构上属于 appendix 之后的 back matter。
+### Appendix, References, and Front Matter
 
-建议确认学校格式要求。如果 References 应该在 Appendices 之前，就改为：
+建议：
 
-```tex
-\include{chapters/05_Conclusion/05_main}
-\clearpage
-\addcontentsline{toc}{chapter}{References}
-\bibliographystyle{unsrt}
-\bibliography{references}
-\appendix
-\include{chapters/06_Appendices/06_main}
-\clearpage
-\chapter*{Acknowledgement of AI Use}
-```
-
-如果学校要求 AI acknowledgement 放在 front matter 或 before references，也需要相应调整。这个不一定影响正文 50 页，但影响最终提交结构。
-
-### 6.2 Float placement
-
-正文里有较多 `[H]`。它能固定表格位置，但容易造成空白和页数不稳定。建议：
-
-- 核心小表可以继续 `[H]`；
-- 大表、worked example 表、profiling 表尽量用 `[htbp]`；
-- Chapter 2 的大矩阵展示如果保留，避免连续多个 display math + `[H]` figure/table。
-
-### 6.3 统一 notation 和 typography
-
-建议统一以下写法：
-
-- transpose: 统一 `^\mathsf T` 或 `^\top`；
-- divide-and-conquer: 统一 `divide--and--conquer`，缩写 `D\&C` 只在首次定义后使用；
-- eigenpair/eigenpairs: `full eigenpair case` 可以保留，但有些地方用 `full eigenpairs` 更自然；
-- `QR/QL` 与 `QR` viewpoint：若一节主要采用 QR viewpoint，开头说清楚 QL 只是 LAPACK implementation variant。
+- Appendix B 的 correctness checks 补 actual maxima 或 threshold。
+- `latex/references.bib` 中 `MartinReinschWilkinson1968` 条目比较粗，建议补 volume/pages/doi 或至少完整 bibliographic fields。
+- `gu1994rank`、`li1994secular` 如果正文没有引用，可以保留但不影响最终 bibliography，因为 BibTeX 通常只列 cited entries。
+- `main.tex` 中 UNSW template 留下了很多未使用 macro 和注释，不影响 PDF，但最终版本如果时间充足可清理。不要在临交前大幅清理，避免引入 LaTeX 问题。
 
 ## 7. 建议执行顺序
 
-1. 先处理技术准确性：
-   - Householder rank-2 scaling；
-   - D&C `rho` sign convention；
-   - Netlib/OpenBLAS stack wording；
-   - SVE table scope。
+如果只做一轮提交前修改，建议按这个顺序：
 
-2. 再处理数据一致性：
-   - Chapter 1 timing table source；
-   - Chapter 4 benchmark interpretation 中 back-transformation nuance；
-   - repeat count 是否需要进 main text。
+1. 修 2.2/2.3 eigenvector 数值一致性。
+2. Appendix 或 Chapter 4 setup 补 residual/orthogonality 最大值或 threshold。
+3. Chapter 4 setup 补 repeat count、warm-up、CSV result path。
+4. Chapter 4 setup 补 KMS matrix scope。
+5. Chapter 3 修 `bandwidth pressure` 的过强表述。
+6. Hardware-counter conclusion 最后再限定 isolated tri-eig stage。
+7. 检查 AI acknowledgement 是否符合课程要求。
+8. 最后做 notation/overfull/reference polish。
 
-3. 然后压缩页数：
-   - QR worked example；
-   - duplicate Implicit Q derivation；
-   - D&C repeated running example；
-   - deep-counter tables。
+## 8. 最终评价
 
-4. 最后跑一次 LaTeX 编译，检查：
-   - Appendix 是否仍从第 51 页或更早开始；
-   - 是否仍无 undefined references/citations；
-   - overfull hbox 是否减少；
-   - References/AI acknowledgement 顺序是否符合提交要求。
+以数学系硕士 project 标准看，当前 thesis 不需要重写，也不需要再压缩数学主体。它的强项是：数学算法、LAPACK routine path 和实验数据之间有清楚对应关系。
 
-## 8. 最终建议摘要
+现在最大的改进空间不是“加更多内容”，而是把少数容易被 examiner 抓住的地方补严谨：
 
-当前 thesis 已经具备完整闭环，不需要推倒重写。最值得做的是“减法”和“精确化”：
+- 同一 worked example 的 eigenvector 要一致；
+- correctness checks 要有实际误差量级；
+- experimental protocol 要在主文中足够透明；
+- KMS 和 4-vCPU thread study 的 scope 要说清楚；
+- AI acknowledgement 和正文 voice 要准确、自然、不过度模板化。
 
-- 减少 Chapter 2 中过长的推导和 worked examples，让正文给实验贡献留出空间；
-- 明确 Chapter 1 preview timing 的来源，避免与 Chapter 4 数据看起来冲突；
-- 修正少数数学和实验 attribution 的精确性问题；
-- 保持 Chapter 4 的核心证据链：stage timing -> profiling -> counters -> memory tradeoff；
-- 把正文压到 47 到 49 页，而不是卡在 50 页。
-
-如果只做一轮修改，建议优先完成第 3 节列出的六项。
+完成这些之后，论文会更像一个完整的数学硕士 project：有理论推导，有可复现实验，有限制说明，也有明确的 routine-selection 结论。
