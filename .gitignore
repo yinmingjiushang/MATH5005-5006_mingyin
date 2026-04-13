@@ -29,6 +29,9 @@ Code/projects/DSYEV_DSYEVD/src/openblas_info
 .vscode/
 update_latex.sh
 
+## Local AI helper notes
+AI_help/
+
 ## LaTeX submodule
 # Note: latex/ is a git submodule, so its compilation artifacts are managed by its own .gitignore
 
