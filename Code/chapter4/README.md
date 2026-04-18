@@ -17,7 +17,7 @@ Older top-level `Code/experiment_4_*` shortcuts have been removed.
 | 4.5.1 DSTEQR profile | `Code/chapter4/04_05_01_dsteqr_profile` | reuses `04_02_benchmark/dsyev_backend` |
 | 4.5.2 DSTEDC profile | `Code/chapter4/04_05_02_dstedc_profile` | reuses `04_02_benchmark/dsyevd_backend` |
 | 4.5.3 Hardware efficiency | `Code/chapter4/04_05_03_hardware_efficiency` | integrated locally |
-| 4.6 Final synthesis and summary | `Code/chapter4/04_06_summary` | documentation only |
+| 4.6 Final synthesis and summary | `Code/chapter4/04_06_summary` | documentation plus summary snapshot |
 | legacy attribution analysis | `Code/chapter4/04_90_legacy_speedup_attribution` | integrated locally |
 
 ## Notes
@@ -28,7 +28,7 @@ Older top-level `Code/experiment_4_*` shortcuts have been removed.
   corresponding `Code/chapter4/<section>/output/` directories.
 - `Code/chapter4/04_90_legacy_speedup_attribution` is kept as a retained
   intermediate analysis from an earlier Chapter 4 outline. It is no longer a
-  current thesis section, but its scripts and compact result snapshot remain
-  useful for reference.
+  current thesis section; the current compact summary snapshot is under
+  `Code/chapter4/results/04_06_summary/`.
 - Section 4.1 is setup/documentation only, so it does not have its own runnable
   directory here.
