@@ -8,7 +8,19 @@
 - `latex/PPT/sections/04_dnc_example.tex`
 - `latex/PPT/script/live_script_15min.md`
 
-目标：根据导师反馈，减少 slide 3-11 的阅读负担。这里的重点不是把长句机械缩短成短语，而是让观众能更快看懂结构，把解释留给口头 presentation。
+目标：根据导师反馈，减少 slide 3-11 的阅读负担。这里的重点不是把长句机械缩短成短语，也不是把 slide 压到只剩关键词，而是达到中等程度的视觉压缩：版面有足够信息密度，观众能舒服地同时看文字、公式和图，并且能抓住每页的关键信息。
+
+重要判断：下面的建议如果全部按“只保留 label + formula + visual”执行，会偏向极简演讲风格，可能让版面显得过空，也会让部分数学逻辑过度依赖口头解释。更合适的目标是每页保留：
+
+- 1 个清楚标题；
+- 1 组核心公式或核心图；
+- 1 句简短 takeaway；
+- 2-3 个短 bullet 或图中标注；
+- 把完整推导和长解释移到讲稿或 backup。
+
+另一个版式原则：数学原理部分尽量不用左右分栏。上下顺序更适合这组 slides，因为观众需要沿着“定义/操作 -> 公式结果 -> 为什么有用 -> 下一步问题”的逻辑往下读。左右分栏只适合矩阵图和示意图已经非常独立的页面；对于推导页，优先保持从上到下的因果链。
+
+首行位置也应统一。Beamer 的普通 `frame` 默认会根据内容高度做垂直居中，内容少的页第一行会自然下沉，内容多的页第一行会靠上。因此主讲内容页建议使用 `\begin{frame}[t]{...}` 进行 top alignment；只有 title、Thank You、或者本身是满版图表且需要居中的页面例外。不要主要依靠逐页 `\vspace` 去修首行高度，否则后续改内容时很容易再次不一致。
 
 ## 总体原则
 
@@ -20,26 +32,28 @@
 
 这会让观众开始读 slide，而不是听讲。建议改成：
 
-- slide 上保留：公式骨架、关键词、结构图、矩阵形状变化、颜色标记；
+- slide 上保留：公式骨架、关键词、必要的一句解释、结构图、矩阵形状变化、颜色标记；
 - 口头讲稿承担：为什么这样做、每个公式怎么读、和性能有什么关系；
 - backup 承担：完整推导、条件说明、较长的数学解释。
 
 可以采用一个简单判断标准：
 
 - 观众 3 秒内能看懂的视觉结构，保留在 slide；
-- 需要一句以上解释才能懂的文字，优先移到讲稿；
+- 每页可以保留一句帮助理解的解释性 takeaway；
+- 需要两句以上解释才能懂的文字，优先移到讲稿；
 - 需要完整推导才成立的内容，放 backup。
 
 ## 推荐统一风格
 
-### 1. Slide 上尽量使用 label + formula + visual
+### 1. Slide 上尽量使用 logical chain + formula + one takeaway
 
 推荐格式：
 
 ```text
-Shifted QR step
+Shifted QR Iteration for Eigenvalue Computation
 T_k = Q_k^T T_{k-1} Q_k
 preserve spectrum
+Takeaway: the iteration preserves eigenvalues while making the active block closer to diagonal, so the eigenvalues can be read from the limiting diagonal entries.
 ```
 
 而不是：
@@ -47,6 +61,8 @@ preserve spectrum
 ```text
 Thus one shifted QR step is an orthogonal similarity transformation...
 ```
+
+也就是说，不建议压缩到只剩 `preserve spectrum` 这种孤立短语。更好的中等压缩是：上方给出操作，中间给出关键相似关系，下方用一句完整 takeaway 说明为什么这能求特征值。
 
 ### 2. 保留颜色，但让颜色只承担一种功能
 
@@ -62,7 +78,7 @@ Thus one shifted QR step is an orthogonal similarity transformation...
 
 Slide 3-11 可以按动作设计：
 
-- Slide 3：QR step preserves spectrum；
+- Slide 3：shifted QR preserves eigenvalues while moving toward diagonal form；
 - Slide 4：first Givens creates a bulge；
 - Slide 5：local rotations chase the bulge；
 - Slide 6：repeat sweeps until deflation；
@@ -74,59 +90,77 @@ Slide 3-11 可以按动作设计：
 
 如果一页里出现两个以上动作，优先删文字或拆成图。
 
-## Slide 3: Explicit Shifted QR
+## Slide 3: Shifted QR Iteration for Eigenvalue Computation
 
 当前问题：
 
 - 文字解释偏 thesis style。
-- 公式已经足够说明 similarity transformation，完整句再解释一次会增加阅读负担。
-- 这页可以成为 QR 主线的入口，但现在像一页小推导。
+- 这页真正要讲的是 shifted QR 为什么能求特征值，而不仅是给出一个 algebraic step。
+- 公式已经足够说明 similarity transformation，但还需要一句清楚解释把 `保谱`、`趋近对角`、`读出特征值` 串起来。
+- 这页还要引出下一页 implicit QR，因此最后应自然落到：显式 QR factorization 太贵，实际用 Givens 进行 implicit implementation。
 
 建议版面：
 
 ```text
-Shifted QR step
+Shifted QR Iteration for Eigenvalue Computation
 
 T_{k-1} - mu_k I = Q_k R_k
+-- reverse QR factors and shift back -->
 T_k = mu_k I + R_k Q_k
 
 => T_k = Q_k^T T_{k-1} Q_k
 
-preserve spectrum
-accumulate eigenvectors
+orthogonal similarity: same eigenvalues
+repeated shifts: active block approaches diagonal form
+diagonal limit: eigenvalues appear on the diagonal
+
+Next: implement this step implicitly with Givens rotations.
 ```
 
-建议删或移入口头：
+建议压缩或移入口头：
 
 - `For the current active tridiagonal block, choose a shift...`
-- `Reverse the factors and shift back...`
-- `Since R_k=...`
-- `Repeated shifted steps drive...`
+- `Reverse the factors and shift back...` 应保留意思，但压成公式箭头上的短 label，避免观众误以为 \(QR\to RQ\) 是普通代数变形。
+- `Since R_k=...` 可以压缩成一行推导，不需要单独完整句。
+- `Repeated shifted steps drive...` 不要删除，应改成短而有逻辑的一句 takeaway。
 
 可视化建议：
 
-- 把推导压成三行公式，中间用一个大箭头连接。
-- 右侧加一个小图：
+- 不建议做左右分栏；这页应保持上下逻辑顺序。
+- 把推导压成三组上下排列的公式，中间用 `\Downarrow` 或短 label 连接。
+- 用一条因果链替代弱流程图：
 
 ```text
-T_{k-1}  -- similarity -->  T_k
-same eigenvalues
-closer to diagonal
+shifted QR step
+      ↓
+orthogonal similarity
+      ↓
+same eigenvalues, but entries change
+      ↓
+iteration drives subdiagonal entries small
+      ↓
+diagonal entries approximate eigenvalues
 ```
 
-或者用三格状态图：
+这条链比 `active block -> shifted QR -> similar block` 更适合本页，因为它直接回答“为什么能求特征值”。
+
+这页不需要复杂图，但建议保留一句有完整逻辑的 takeaway，例如：
 
 ```text
-active block -> shifted QR -> similar block
+Because each step is an orthogonal similarity transformation, the eigenvalues are unchanged; because the shifted iteration reduces the active subdiagonal entries, the limiting diagonal entries reveal those eigenvalues.
 ```
 
-这页不需要复杂图，重点是让观众快速接受 `similarity = spectrum unchanged`。
+最后加一句过渡到下一页：
+
+```text
+In practice, we do not form the full QR factorization; we realize the same step implicitly with local Givens rotations.
+```
 
 ## Slide 4: First Givens Rotation
 
 当前优点：
 
-- 左侧 Givens matrix 和右侧 bulge matrix 很适合 slide。
+- Givens matrix 和 bulge matrix 很适合作为上下连续的视觉解释。
 - 颜色标出 first bulge 是有效的。
 
 当前问题：
@@ -146,7 +180,7 @@ G_1^T (T - mu I) G_1
 first bulge
 ```
 
-建议删或移入口头：
+建议压缩或移入口头：
 
 - `Only the first two entries are nonzero...`
 - `Applying the same rotation from both sides preserves symmetry...`
@@ -179,7 +213,7 @@ x nonzero, . zero, + bulge
 当前问题：
 
 - 顶部公式和解释文字占据注意力。
-- 矩阵序列本身已经能说明移动过程，文字可以大幅减少。
+- 矩阵序列本身已经能说明移动过程，文字可以减少到少量短 bullet。
 - 现在公式、文字、矩阵序列三者都在解释同一件事。
 
 建议版面：
@@ -198,7 +232,7 @@ G_i acts on rows/columns (i,i+1)
 M_i = G_i^{\mathsf T} M_{i-1} G_i
 ```
 
-建议删或移入口头：
+建议压缩或移入口头：
 
 - `After the first rotation, the sweep applies...`
 - `Equivalently, ...`
@@ -207,7 +241,7 @@ M_i = G_i^{\mathsf T} M_{i-1} G_i
 
 可视化建议：
 
-- 只保留三个或四个矩阵状态，但让矩阵更大。
+- 保留三个或四个矩阵状态，并在每个状态下放 1-2 个短 label，让图和文字互相支撑。
 - 在每个状态下方只写：
 
 ```text
@@ -270,7 +304,7 @@ T_k = Q_k^{\mathsf T}T_{k-1}Q_k
 Z_k = Z_{k-1}Q_k
 ```
 
-建议删或移入口头：
+建议压缩或移入口头：
 
 - `Implicit Q theorem: first shifted column...`
 - `No full QR factorization is formed...`
@@ -327,14 +361,18 @@ repeat upward
  upward merge: D + rho z z^T
 ```
 
-右侧只保留一个关键公式：
+树图下方保留一个关键公式，再配一句 takeaway：
 
 ```tex
 Q_0^{\mathsf T}T_{\mathrm{parent}}Q_0
 = D+\rho zz^{\mathsf T}
 ```
 
-建议删或移入口头：
+```text
+Takeaway: solve small children, then merge upward.
+```
+
+建议压缩或移入口头：
 
 - `The recursion is justified by induction on the split tree.`
 - `At each parent node, the split is exact after compensation...`
@@ -357,9 +395,9 @@ Q_0^{\mathsf T}T_{\mathrm{parent}}Q_0
 
 建议版面：
 
-左侧：大矩阵图，高亮 \(b_3\)，显示 cut line。
+上方：大矩阵图，高亮 \(b_3\)，显示 cut line。
 
-右侧：只保留 rank-one rewrite。
+下方：保留 rank-one rewrite，并加一句说明“不丢掉 coupling，而是延后到 merge”。
 
 ```tex
 \rho=|b_3|,
@@ -376,7 +414,7 @@ T_1&0\\
 +\rho uu^{\mathsf T}
 ```
 
-建议删或移入口头：
+建议压缩或移入口头：
 
 - `Choose one middle coupling...`
 - `With b_3=... the local interface split is...`
@@ -449,7 +487,7 @@ D=D_1\oplus D_2
 Q_0^{\mathsf T}TQ_0 = D+\rho zz^{\mathsf T}
 ```
 
-建议删或移入口头：
+建议压缩或移入口头：
 
 - `Recursion continues until...`
 - `Here Q_1,Q_2 are orthogonal...`
@@ -474,12 +512,12 @@ z = boundary components in child eigenbasis
 
 当前问题：
 
-- 右侧说明文字仍然偏多。
+- 说明文字仍然偏多。
 - interlacing 公式和 root bracket 公式有重复，可以只留一个。
 
 建议版面：
 
-上方只保留：
+上方保留核心 secular equation：
 
 ```tex
 f(\lambda)
@@ -488,7 +526,7 @@ f(\lambda)
 
 中间放大 secular plot。
 
-右侧或底部保留三条极短 label：
+图下方保留三条极短 label：
 
 ```text
 d_i: child eigenvalues / poles
@@ -496,7 +534,7 @@ lambda_i: parent eigenvalues / roots
 one root per interval
 ```
 
-建议删或移入口头：
+建议压缩或移入口头：
 
 - `(D+\rho zz^T)y=\lambda y` 可移入口头或 backup；
 - `After sorting the active poles...`；
@@ -513,7 +551,7 @@ poles d_i
 roots lambda_i
 ```
 
-这样观众不需要读右侧段落才能理解图。
+这样观众不需要读很长的说明段落，也能理解图。
 
 ## Slide 11: Recover the Eigenvectors
 
@@ -546,11 +584,14 @@ Y in diagonal basis
 Q_parent in original parent block
 ```
 
-或用左右两栏：
+或用上下两层：
 
 ```text
-Diagonal basis                    Parent basis
-y_j ∝ (D-lambda_j I)^{-1}z   ->   Q_parent = Q_0Y
+Diagonal basis
+y_j ∝ (D-lambda_j I)^{-1}z
+      ↓
+Parent basis
+Q_parent = Q_0Y
 ```
 
 建议保留公式：
@@ -563,7 +604,7 @@ y_j ∝ (D-lambda_j I)^{-1}z   ->   Q_parent = Q_0Y
 Q_{\mathrm{parent}}=Q_0Y
 ```
 
-建议删或移入口头：
+建议压缩或移入口头：
 
 - `After Step 4, the roots...`
 - `Normalize these vectors and collect them...`
@@ -582,18 +623,18 @@ pass parent eigenpairs upward
 
 1. Slide 6 改成 QR sweep/deflation flowchart，删除 theorem-level 长解释。
 2. Slide 7 改成 D&C split-merge tree，不再写 induction-style explanation。
-3. Slide 8 删除或移走 2x2 local split 推导，主 slide 只保留 matrix cut + rank-one rewrite。
+3. Slide 8 压缩 2x2 local split 推导，主 slide 以 matrix cut + rank-one rewrite 为主，再保留一句解释 coupling 没有丢失。
 4. Slide 11 改成 basis-lift 图，突出 \(Y \to Q_0Y\)。
 
 ### 中优先级
 
 1. Slide 5 放大 bulge-chasing 图，减少顶部公式和说明。
 2. Slide 9 改成 child-basis transformation 图。
-3. Slide 10 放大 secular plot，右侧说明压缩为 label。
+3. Slide 10 放大 secular plot，说明文字压缩为图下 label。
 
 ### 低优先级
 
-1. Slide 3 保留三行 QR 公式即可，不需要完整推导文字。
+1. Slide 3 保留三行 QR 公式，加一句 similarity takeaway，不需要完整推导文字。
 2. Slide 4 保留 Givens rotation 和 bulge matrix，压缩上下说明。
 
 ## 可以直接采用的短标题
@@ -602,7 +643,7 @@ pass parent eigenpairs upward
 
 | 当前标题 | 建议标题 |
 | --- | --- |
-| `Explicit Shifted QR: The Algebraic Step` | `Shifted QR Step` |
+| `Explicit Shifted QR: The Algebraic Step` | `Shifted QR Iteration for Eigenvalue Computation` |
 | `Implicit Shifted QR, Step 1: First Givens Rotation` | `First Givens: Create a Bulge` |
 | `Implicit Shifted QR, Step 2: Chase the Bulge` | `Chase the Bulge` |
 | `Implicit Shifted QR, Step 3: Next Iterate and Deflation` | `Repeat Until Deflation` |
@@ -633,6 +674,6 @@ Slide 3-11 最适合的修改方向是：
 - QR 部分多用矩阵结构图和流程图，让观众看到 bulge 如何产生、移动、消失；
 - D&C 部分多用 split tree、block matrix、basis transformation 图，让观众看到问题如何被拆开再合并；
 - 公式保留核心结果，不保留完整推导；
-- 解释性完整句尽量转移到 `live_script_15min.md`。
+- 长解释性完整句尽量转移到 `live_script_15min.md`，但每页保留一句帮助观众理解的 takeaway。
 
 如果时间有限，优先改 slide 6-8 和 slide 11。这几页目前最像 thesis 页面，压缩后整套 presentation 的阅读负担会明显下降。
